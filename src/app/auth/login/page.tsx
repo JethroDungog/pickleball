@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createBrowserClient } from '@supabase/ssr'
-import { Zap, Mail, Lock, User, Phone, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react'
+import { Mail, Lock, User, Phone, ArrowRight, Loader2, CheckCircle2, X, HelpCircle, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
@@ -59,142 +59,150 @@ function LoginForm() {
           options: {
             data: {
               full_name: fullName,
-              phone: phone.trim() || undefined,
+              phone: phone,
             },
           },
         })
-
         if (error) {
           setErrorMsg(error.message)
           toast.error(error.message)
-        } else {
-          if (data.session) {
-            toast.success('Account created!')
-            router.push(redirectTo)
-            router.refresh()
-          } else {
-            setSignUpSuccess(true)
-            toast.success('Registration successful! Please check your email to confirm.')
-          }
+        } else if (data.user) {
+          setSignUpSuccess(true)
+          toast.success('Account created!')
         }
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'An unexpected error occurred')
+    } catch {
+      setErrorMsg('An unexpected error occurred. Please try again.')
+      toast.error('Authentication failed')
     } finally {
       setLoading(false)
     }
   }
 
+  const [showGoogleModal, setShowGoogleModal] = useState(false)
+  const [showSetupGuide, setShowSetupGuide] = useState(false)
+
+  const isSupabasePlaceholder =
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL.includes('your-supabase-project') ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')
+
   const handleGoogleSignIn = async () => {
-    const origin = window.location.origin
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-      },
-    })
-    if (error) {
-      toast.error(error.message)
+    if (isSupabasePlaceholder) {
+      setShowGoogleModal(true)
+      return
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo}`,
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
+      })
+      if (error) {
+        toast.error(error.message)
+      }
+    } catch {
+      toast.error('Unable to initialize Google Sign-In')
     }
   }
 
+  const handleDemoGoogleSignIn = () => {
+    document.cookie = 'preview_role=customer; path=/; max-age=86400'
+    toast.success('Signed in with Google as Alex Morgan (Demo)')
+    setShowGoogleModal(false)
+    router.push(redirectTo || '/dashboard')
+    router.refresh()
+  }
+
+
   return (
-    <div className="min-h-screen bg-court-dark flex flex-col lg:flex-row text-slate-100">
+    <div className="min-h-screen bg-[var(--apple-bg)] flex flex-col lg:flex-row text-[var(--apple-text)] pt-20 lg:pt-24 transition-colors duration-200">
       {/* Left Column: Athletic Branding & Visual Court Lines */}
-      <div className="relative hidden lg:flex lg:w-1/2 bg-[#090e0a] border-r border-white/10 flex-col justify-between p-12 overflow-hidden">
-        {/* Animated Court SVG background */}
-        <div className="absolute inset-0 pointer-events-none opacity-20">
+      <div className="relative hidden lg:flex lg:w-1/2 bg-black/[0.02] dark:bg-white/[0.02] border-r border-[var(--apple-border)] flex-col justify-between p-12 overflow-hidden">
+        {/* Subtle Court SVG background */}
+        <div className="absolute inset-0 pointer-events-none opacity-10 dark:opacity-20">
           <svg className="w-full h-full" viewBox="0 0 600 600" fill="none">
-            <rect x="50" y="50" width="500" height="500" rx="8" stroke="#39ff14" strokeWidth="2" />
-            <line x1="300" y1="50" x2="300" y2="550" stroke="#39ff14" strokeWidth="4" />
-            <line x1="180" y1="50" x2="180" y2="550" stroke="#39ff14" strokeWidth="2" strokeDasharray="6 6" />
-            <line x1="420" y1="50" x2="420" y2="550" stroke="#39ff14" strokeWidth="2" strokeDasharray="6 6" />
-            <circle cx="300" cy="50" r="8" fill="#39ff14" />
-            <circle cx="300" cy="550" r="8" fill="#39ff14" />
+            <rect x="50" y="50" width="500" height="500" rx="8" stroke="#34c759" strokeWidth="2" />
+            <line x1="300" y1="50" x2="300" y2="550" stroke="#34c759" strokeWidth="4" />
+            <line x1="180" y1="50" x2="180" y2="550" stroke="#34c759" strokeWidth="2" strokeDasharray="6 6" />
+            <line x1="420" y1="50" x2="420" y2="550" stroke="#34c759" strokeWidth="2" strokeDasharray="6 6" />
+            <circle cx="300" cy="50" r="8" fill="#34c759" />
+            <circle cx="300" cy="550" r="8" fill="#34c759" />
           </svg>
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: 'radial-gradient(circle, #39ff1410 1px, transparent 1px)',
-              backgroundSize: '24px 24px',
-            }}
-          />
         </div>
 
-        {/* Top Logo */}
-        <div className="relative z-10">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <Zap className="w-7 h-7 text-neon-green fill-neon-green drop-shadow-[0_0_8px_#39ff14]" />
-            <span className="font-display font-black text-3xl tracking-tight text-white">
-              <span className="text-neon-green">PICK</span>COURT
-            </span>
-          </Link>
-          <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-green/10 border border-neon-green/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />
-            <span className="text-xs uppercase tracking-widest text-neon-green font-semibold">24/7 Premium Facility</span>
-          </div>
+        {/* Top Tagline */}
+        <div className="relative z-10 pt-2">
+          <span className="text-xs uppercase tracking-widest text-[#34c759] font-semibold">
+            Championship Facility · Member Access
+          </span>
         </div>
 
         {/* Center Editorial Quote */}
         <div className="relative z-10 max-w-md my-auto">
-          <p className="text-xs uppercase tracking-[4px] text-neon-green/70 font-bold mb-3">Athletic Excellence</p>
-          <h2 className="font-display font-black text-4xl text-white tracking-tight leading-tight">
-            YOUR COURT IS WAITING. LOCK IN YOUR SESSION.
+          <p className="text-xs uppercase tracking-widest text-[var(--apple-subtext)] font-semibold mb-3">Athletic Excellence</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl text-[var(--apple-text)] tracking-tight leading-tight">
+            Your court is waiting. Lock in your session.
           </h2>
-          <p className="mt-4 text-slate-400 text-sm leading-relaxed">
-            Instant booking, zero double-booking guarantee, high-visibility tournament lighting, and pro-grade surfaces.
+          <p className="mt-4 text-[var(--apple-subtext)] text-sm leading-relaxed">
+            Instant booking, zero double-booking concurrency, tournament lighting, and pro-grade surfaces.
           </p>
 
-          <div className="mt-8 grid grid-cols-3 gap-4 border-t border-white/10 pt-6">
+          <div className="mt-8 grid grid-cols-3 gap-4 border-t border-[var(--apple-border)] pt-6">
             <div>
-              <p className="font-display font-black text-2xl text-neon-green">4</p>
-              <p className="text-xs text-slate-500 uppercase">Championship Courts</p>
+              <p className="font-display font-bold text-2xl text-[#34c759]">4</p>
+              <p className="text-[11px] text-[var(--apple-subtext)] uppercase mt-0.5">Championship Courts</p>
             </div>
             <div>
-              <p className="font-display font-black text-2xl text-neon-cyan">100%</p>
-              <p className="text-xs text-slate-500 uppercase">Atomic Concurrency</p>
+              <p className="font-display font-bold text-2xl text-[#0071e3]">100%</p>
+              <p className="text-[11px] text-[var(--apple-subtext)] uppercase mt-0.5">Atomic Locking</p>
             </div>
             <div>
-              <p className="font-display font-black text-2xl text-amber-400">24/7</p>
-              <p className="text-xs text-slate-500 uppercase">Digital Access</p>
+              <p className="font-display font-bold text-2xl text-[#ff9f0a]">24/7</p>
+              <p className="text-[11px] text-[var(--apple-subtext)] uppercase mt-0.5">Digital Access</p>
             </div>
           </div>
         </div>
 
         {/* Bottom footer credit */}
-        <div className="relative z-10 text-xs text-slate-600 flex items-center justify-between">
+        <div className="relative z-10 text-xs text-[var(--apple-subtext)] flex items-center justify-between">
           <span>© {new Date().getFullYear()} PickCourt Inc.</span>
-          <span className="text-slate-500">Fast · Frictionless · Tactile</span>
+          <span>Fast · Frictionless · Tactile</span>
         </div>
       </div>
 
       {/* Right Column: Form */}
-      <div className="flex-1 flex flex-col justify-center px-6 py-16 sm:px-12 lg:px-20 relative">
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-20 relative">
         <div className="w-full max-w-md mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="font-display font-black text-3xl sm:text-4xl text-white tracking-tight">
-              {mode === 'signin' ? 'WELCOME BACK' : 'JOIN PICKCOURT'}
+          <div className="mb-6">
+            <h1 className="font-display font-bold text-2xl sm:text-3xl text-[var(--apple-text)] tracking-tight">
+              {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
             </h1>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-1 text-xs sm:text-sm text-[var(--apple-subtext)]">
               {mode === 'signin'
                 ? 'Sign in to access your digital court passes and reservations.'
                 : 'Create an account to book courts and join the facility.'}
             </p>
           </div>
 
-          {/* Mode Tabs */}
-          <div className="flex rounded-xl bg-court-surface p-1 border border-white/10 mb-6">
+          {/* Apple Segmented Control */}
+          <div className="flex rounded-full bg-black/[0.05] dark:bg-white/[0.06] p-1 border border-[var(--apple-border)] mb-6">
             <button
               type="button"
               onClick={() => {
                 setMode('signin')
                 setErrorMsg(null)
               }}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 mode === 'signin'
-                  ? 'bg-neon-green text-black shadow-[0_0_12px_rgba(57,255,20,0.4)]'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[var(--apple-card)] text-[var(--apple-text)] shadow-sm'
+                  : 'text-[var(--apple-subtext)] hover:text-[var(--apple-text)]'
               }`}
             >
               Sign In
@@ -205,10 +213,10 @@ function LoginForm() {
                 setMode('signup')
                 setErrorMsg(null)
               }}
-              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 mode === 'signup'
-                  ? 'bg-neon-green text-black shadow-[0_0_12px_rgba(57,255,20,0.4)]'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-[var(--apple-card)] text-[var(--apple-text)] shadow-sm'
+                  : 'text-[var(--apple-subtext)] hover:text-[var(--apple-text)]'
               }`}
             >
               Create Account
@@ -219,7 +227,7 @@ function LoginForm() {
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            className="w-full py-3 px-4 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-medium text-sm flex items-center justify-center gap-3 transition-colors mb-6 group"
+            className="w-full py-2.5 px-4 rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-card)] hover:bg-black/[0.03] dark:hover:bg-white/[0.04] text-[var(--apple-text)] font-medium text-xs sm:text-sm flex items-center justify-center gap-3 transition-colors mb-6 shadow-sm cursor-pointer"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
@@ -243,8 +251,8 @@ function LoginForm() {
           </button>
 
           <div className="relative flex items-center justify-center mb-6">
-            <div className="border-t border-white/10 w-full" />
-            <span className="bg-court-dark px-3 text-xs uppercase tracking-widest text-slate-500 font-semibold">
+            <div className="border-t border-[var(--apple-border)] w-full" />
+            <span className="bg-[var(--apple-bg)] px-3 text-[11px] uppercase tracking-widest text-[var(--apple-subtext)] font-medium">
               Or with email
             </span>
           </div>
@@ -254,20 +262,21 @@ function LoginForm() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-6 rounded-2xl bg-neon-green/10 border border-neon-green/30 text-center"
+              className="p-6 rounded-2xl bg-[#34c759]/10 border border-[#34c759]/20 text-center space-y-3"
             >
-              <CheckCircle2 className="w-12 h-12 text-neon-green mx-auto mb-3" />
-              <h3 className="font-display font-bold text-lg text-white">Check Your Inbox</h3>
-              <p className="text-sm text-slate-300 mt-2">
-                We sent a confirmation link to <span className="text-neon-green font-semibold">{email}</span>. Click
+              <CheckCircle2 className="w-10 h-10 text-[#34c759] mx-auto" />
+              <h3 className="font-display font-bold text-lg text-[var(--apple-text)]">Check Your Inbox</h3>
+              <p className="text-xs text-[var(--apple-subtext)] leading-relaxed">
+                We sent a confirmation link to <span className="text-[#34c759] font-medium">{email}</span>. Click
                 the link to activate your account and start booking courts.
               </p>
               <button
+                type="button"
                 onClick={() => {
                   setSignUpSuccess(false)
                   setMode('signin')
                 }}
-                className="mt-4 px-4 py-2 rounded-lg bg-neon-green text-black font-bold text-xs uppercase tracking-wider"
+                className="mt-2 px-5 py-2 rounded-full bg-[var(--apple-pill-bg)] text-[var(--apple-pill-text)] font-semibold text-xs transition-opacity hover:opacity-90 cursor-pointer"
               >
                 Back to Sign In
               </button>
@@ -285,34 +294,34 @@ function LoginForm() {
                     className="space-y-4"
                   >
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                      <label className="block text-xs font-medium text-[var(--apple-subtext)] mb-1.5">
                         Full Name
                       </label>
                       <div className="relative">
-                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--apple-subtext)]" />
                         <input
                           type="text"
                           required
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           placeholder="Alex Morgan"
-                          className="w-full pl-10 pr-4 py-3 rounded-xl bg-court-surface border border-white/10 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-neon-green transition-colors"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] border border-[var(--apple-border)] text-[var(--apple-text)] placeholder-[var(--apple-subtext)] text-xs sm:text-sm focus:outline-none focus:border-[#34c759] transition-colors"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                      <label className="block text-xs font-medium text-[var(--apple-subtext)] mb-1.5">
                         Phone Number (Optional)
                       </label>
                       <div className="relative">
-                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--apple-subtext)]" />
                         <input
                           type="tel"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
-                          placeholder="+1 (555) 019-2834"
-                          className="w-full pl-10 pr-4 py-3 rounded-xl bg-court-surface border border-white/10 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-neon-green transition-colors"
+                          placeholder="+63 917 123 4567"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] border border-[var(--apple-border)] text-[var(--apple-text)] placeholder-[var(--apple-subtext)] text-xs sm:text-sm focus:outline-none focus:border-[#34c759] transition-colors"
                         />
                       </div>
                     </div>
@@ -321,28 +330,28 @@ function LoginForm() {
               </AnimatePresence>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-medium text-[var(--apple-subtext)] mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--apple-subtext)]" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="player@pickcourt.com"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-court-surface border border-white/10 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-neon-green transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] border border-[var(--apple-border)] text-[var(--apple-text)] placeholder-[var(--apple-subtext)] text-xs sm:text-sm focus:outline-none focus:border-[#34c759] transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                <label className="block text-xs font-medium text-[var(--apple-subtext)] mb-1.5">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--apple-subtext)]" />
                   <input
                     type="password"
                     required
@@ -350,7 +359,7 @@ function LoginForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-court-surface border border-white/10 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-neon-green transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] border border-[var(--apple-border)] text-[var(--apple-text)] placeholder-[var(--apple-subtext)] text-xs sm:text-sm focus:outline-none focus:border-[#34c759] transition-colors"
                   />
                 </div>
               </div>
@@ -360,7 +369,7 @@ function LoginForm() {
                 <motion.div
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400"
+                  className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-500"
                 >
                   {errorMsg}
                 </motion.div>
@@ -370,12 +379,12 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3.5 px-4 rounded-xl bg-neon-green text-black font-display font-black text-sm tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#32e012] transition-all shadow-[0_0_20px_rgba(57,255,20,0.4)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full mt-2 py-3 px-4 rounded-full bg-[var(--apple-pill-bg)] text-[var(--apple-pill-text)] font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Processing...</span>
+                    <span>Processing…</span>
                   </>
                 ) : (
                   <>
@@ -385,21 +394,182 @@ function LoginForm() {
                 )}
               </button>
 
-              <div className="pt-2 text-center text-xs text-slate-500">
+              <div className="pt-2 text-center text-[11px] text-[var(--apple-subtext)]">
                 By continuing, you agree to PickCourt's{' '}
-                <Link href="/terms" className="text-slate-400 underline hover:text-white">
+                <Link href="/terms" className="underline hover:text-[var(--apple-text)]">
                   Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="text-slate-400 underline hover:text-white">
-                  Privacy Policy
                 </Link>
                 .
               </div>
             </form>
           )}
+
+          {/* Quick Role Preview Box */}
+          <div className="mt-8 pt-6 border-t border-[var(--apple-border)]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[11px] font-semibold tracking-wider text-[var(--apple-subtext)] uppercase">
+                Explore Portal Roles (Preview Mode)
+              </span>
+              <span className="text-[10px] text-[#34c759] font-medium">1-Click Test</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2.5">
+              <Link
+                href="/admin?preview=admin"
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm"
+              >
+                <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#34c759] transition-colors">
+                  Admin
+                </span>
+                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Court Manager</span>
+              </Link>
+              <Link
+                href="/super-admin?preview=super_admin"
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm"
+              >
+                <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#0071e3] transition-colors">
+                  Super Admin
+                </span>
+                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Facility Metrics</span>
+              </Link>
+              <Link
+                href="/dashboard?preview=customer"
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm"
+              >
+                <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#ff9f0a] transition-colors">
+                  Customer
+                </span>
+                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Pass Wallet</span>
+              </Link>
+            </div>
+            <p className="mt-3 text-[11px] text-[var(--apple-subtext)] leading-relaxed text-center">
+              Testing the application? Click any role above to inspect its interface instantly without needing a Supabase account.
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* ── Google OAuth Helper & Demo Modal ───────────────────────────────── */}
+      <AnimatePresence>
+        {showGoogleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-lg rounded-3xl bg-[var(--apple-card)] border border-[var(--apple-border)] p-6 sm:p-7 shadow-2xl space-y-5 text-left"
+            >
+              {/* Modal Header */}
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] border border-[var(--apple-border)] flex items-center justify-center">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
+                      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                      <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z" />
+                      <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-lg text-[var(--apple-text)]">
+                      Google Sign-In Configuration
+                    </h3>
+                    <p className="text-xs text-[var(--apple-subtext)]">
+                      Supabase Environment Status
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGoogleModal(false)}
+                  className="p-1.5 rounded-full hover:bg-black/[0.06] dark:hover:bg-white/[0.08] text-[var(--apple-subtext)] transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Notice Explanation */}
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-[var(--apple-text)] space-y-1.5">
+                <p className="font-semibold text-amber-600 dark:text-amber-400">
+                  Placeholder Supabase Credentials Active
+                </p>
+                <p className="text-[var(--apple-subtext)] leading-relaxed">
+                  Your <code className="px-1 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-[11px]">.env.local</code> currently contains <code className="font-mono text-[11px]">your-supabase-project.supabase.co</code>. Clicking Google Sign-In previously attempted to navigate to that non-existent address (<code className="font-mono text-[11px]">DNS_PROBE_FINISHED_NXDOMAIN</code>).
+                </p>
+              </div>
+
+              {/* Option 1: Instant Test Demo */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-[var(--apple-text)]">Option A: Instant Demo Test</p>
+                <button
+                  type="button"
+                  onClick={handleDemoGoogleSignIn}
+                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[var(--apple-pill-bg)] text-[var(--apple-pill-text)] font-semibold text-xs hover:opacity-90 transition-all shadow-sm active:scale-98 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 size={16} />
+                    <span>Continue with Demo Google Account (Alex Morgan)</span>
+                  </div>
+                  <ArrowRight size={14} />
+                </button>
+                <p className="text-[11px] text-[var(--apple-subtext)]">
+                  Immediately logs in as an authenticated customer to test court booking, digital passes, and wallet access.
+                </p>
+              </div>
+
+              {/* Option 2: Live Setup Guide */}
+              <div className="border-t border-[var(--apple-border)] pt-4 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSetupGuide(!showSetupGuide)}
+                  className="w-full flex items-center justify-between text-xs font-medium text-[var(--apple-text)] hover:text-[#0071e3] transition-colors py-1 cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <HelpCircle size={14} />
+                    <span>Option B: How to enable real Google Login (Production)</span>
+                  </span>
+                  {showSetupGuide ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+
+                {showSetupGuide && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="p-3.5 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-[var(--apple-border)] space-y-2 text-[11px] text-[var(--apple-subtext)] leading-relaxed"
+                  >
+                    <p className="font-semibold text-[var(--apple-text)]">3-Step Production Setup:</p>
+                    <ol className="list-decimal pl-4 space-y-1.5">
+                      <li>
+                        <strong>Create Google OAuth Client:</strong> In Google Cloud Console &gt; APIs &amp; Services &gt; Credentials, create an OAuth 2.0 Web Client. Set Authorized redirect URI to:
+                        <br />
+                        <code className="inline-block mt-1 px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 font-mono text-[10px] break-all">
+                          https://&lt;your-supabase-project&gt;.supabase.co/auth/v1/callback
+                        </code>
+                      </li>
+                      <li>
+                        <strong>Enable in Supabase:</strong> In your Supabase Dashboard &gt; Authentication &gt; Providers &gt; Google, paste your Client ID and Client Secret, then click <em>Save</em>.
+                      </li>
+                      <li>
+                        <strong>Update .env.local:</strong> Replace <code className="font-mono">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="font-mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> with your live Supabase project credentials.
+                      </li>
+                    </ol>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Dismiss */}
+              <div className="pt-2 text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowGoogleModal(false)}
+                  className="px-4 py-2 rounded-full text-xs font-medium text-[var(--apple-subtext)] hover:text-[var(--apple-text)] transition-colors cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -408,8 +578,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-court-dark flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-neon-green" />
+        <div className="min-h-screen bg-[var(--apple-bg)] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[#34c759]" />
         </div>
       }
     >

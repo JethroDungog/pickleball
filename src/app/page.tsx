@@ -5,22 +5,18 @@ import Link from 'next/link'
 import {
   motion,
   useInView,
-  useAnimation,
-  AnimatePresence,
 } from 'framer-motion'
 import {
   ChevronRight,
   MapPin,
   Clock,
-  Star,
-  Users,
-  Zap,
+  Sparkles,
   Calendar,
-  BarChart3,
-  Check,
+  CreditCard,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import CourtMapPicker from '@/components/CourtMapPicker'
+import Footer from '@/components/Footer'
 import type { Court } from '@/types'
 
 // ─── Mock data for preview ────────────────────────────────────────────────────
@@ -28,274 +24,154 @@ const PREVIEW_COURTS: Court[] = [
   {
     id: '1',
     name: 'Court 1',
-    description: 'Premium hardcourt with pro-grade surface',
+    description: 'Indoor pro-grade cushion hardcourt with tournament lighting',
     surface_type: 'hard',
     is_indoor: true,
-    hourly_rate: 25,
+    hourly_rate: 400,
     is_active: true,
-    color_hex: '#22c55e',
+    color_hex: '#30d158',
     created_at: '',
   },
   {
     id: '2',
     name: 'Court 2',
-    description: 'Competition-grade synthetic surface',
+    description: 'Indoor competition synthetic surface for high-grip play',
     surface_type: 'synthetic',
     is_indoor: true,
-    hourly_rate: 25,
+    hourly_rate: 400,
     is_active: true,
-    color_hex: '#3b82f6',
+    color_hex: '#0a84ff',
     created_at: '',
   },
   {
     id: '3',
     name: 'Court 3',
-    description: 'Outdoor clay with natural feel',
+    description: 'Outdoor red clay court with low-impact cushioned comfort',
     surface_type: 'clay',
     is_indoor: false,
-    hourly_rate: 25,
+    hourly_rate: 400,
     is_active: true,
-    color_hex: '#f59e0b',
+    color_hex: '#ff9f0a',
     created_at: '',
   },
   {
     id: '4',
     name: 'Court 4',
-    description: 'Open-air hard court, floodlit 24/7',
+    description: 'Outdoor floodlit hard court, fully illuminated 24/7',
     surface_type: 'hard',
     is_indoor: false,
-    hourly_rate: 25,
+    hourly_rate: 550,
     is_active: true,
-    color_hex: '#ef4444',
+    color_hex: '#ff453a',
     created_at: '',
   },
 ]
 
-// ─── Animated SVG Pickleball Court Background ─────────────────────────────────
+// ─── Minimal Apple Court Line Background ──────────────────────────────────────
 function CourtLineBg() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <svg
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] max-w-[1200px] opacity-[0.07]"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] max-w-[1100px] opacity-[0.06] dark:opacity-[0.04]"
         viewBox="0 0 880 400"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Outer court rectangle */}
-        <motion.rect
-          x="40" y="40" width="800" height="320" rx="2"
-          stroke="#39ff14" strokeWidth="2"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2.5, ease: 'easeInOut', delay: 0.2 }}
-        />
-        {/* Net (center vertical) */}
-        <motion.line
-          x1="440" y1="40" x2="440" y2="360"
-          stroke="#39ff14" strokeWidth="4"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1.2, delay: 1.2 }}
-        />
-        {/* Left kitchen line */}
-        <motion.line
-          x1="298" y1="40" x2="298" y2="360"
-          stroke="#39ff14" strokeWidth="1.5"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1, delay: 1.6 }}
-        />
-        {/* Right kitchen line */}
-        <motion.line
-          x1="582" y1="40" x2="582" y2="360"
-          stroke="#39ff14" strokeWidth="1.5"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1, delay: 1.6 }}
-        />
-        {/* Left center service line */}
-        <motion.line
-          x1="40" y1="200" x2="298" y2="200"
-          stroke="#39ff14" strokeWidth="1"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.8, delay: 2 }}
-        />
-        {/* Right center service line */}
-        <motion.line
-          x1="582" y1="200" x2="840" y2="200"
-          stroke="#39ff14" strokeWidth="1"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.8, delay: 2 }}
-        />
-        {/* Net posts */}
-        <motion.circle cx="440" cy="40" r="6" fill="#39ff14"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 2.4 }}
-        />
-        <motion.circle cx="440" cy="360" r="6" fill="#39ff14"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 2.4 }}
-        />
+        <rect x="40" y="40" width="800" height="320" rx="4" stroke="currentColor" strokeWidth="1.5" className="text-[var(--apple-text)]" />
+        <line x1="440" y1="40" x2="440" y2="360" stroke="currentColor" strokeWidth="2.5" className="text-[var(--apple-text)]" />
+        <line x1="298" y1="40" x2="298" y2="360" stroke="currentColor" strokeWidth="1" className="text-[var(--apple-text)]" />
+        <line x1="582" y1="40" x2="582" y2="360" stroke="currentColor" strokeWidth="1" className="text-[var(--apple-text)]" />
+        <line x1="40" y1="200" x2="298" y2="200" stroke="currentColor" strokeWidth="1" className="text-[var(--apple-text)]" />
+        <line x1="582" y1="200" x2="840" y2="200" stroke="currentColor" strokeWidth="1" className="text-[var(--apple-text)]" />
+        <circle cx="440" cy="40" r="5" fill="currentColor" className="text-[var(--apple-text)]" />
+        <circle cx="440" cy="360" r="5" fill="currentColor" className="text-[var(--apple-text)]" />
       </svg>
-
-      {/* Dot matrix overlay */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #39ff1410 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      />
     </div>
   )
 }
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
-const HEADLINE = 'DOMINATE THE COURT.'
-
 function HeroSection() {
-  const letters = HEADLINE.split('')
-
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#0d0d0d]">
+    <section className="relative min-h-[90vh] flex flex-col items-center justify-center overflow-hidden bg-[var(--apple-bg)] pt-24 pb-16 transition-colors">
       <CourtLineBg />
 
-      {/* Radial spotlight */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(57,255,20,0.08) 0%, transparent 65%)',
-        }}
-      />
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-16">
 
-        {/* Eyebrow badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        {/* Clean Apple editorial headline */}
+        <motion.h1
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-neon-green/30 bg-neon-green/5 mb-8"
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="font-display font-bold text-4xl sm:text-6xl md:text-7xl tracking-tight text-[var(--apple-text)] mb-6 leading-[1.08]"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />
-          <span className="text-xs font-semibold text-neon-green tracking-[2px] uppercase">
-            Courts Available Now
-          </span>
-        </motion.div>
-
-        {/* Kinetic headline */}
-        <h1 className="font-display font-black text-[clamp(3rem,10vw,8rem)] leading-[0.9] tracking-tighter mb-6">
-          <div className="overflow-hidden">
-            <div className="flex flex-wrap justify-center">
-              {letters.map((char, i) => (
-                <motion.span
-                  key={i}
-                  initial={{ y: '110%', opacity: 0, rotateX: -60 }}
-                  animate={{ y: 0, opacity: 1, rotateX: 0 }}
-                  transition={{
-                    delay: 0.4 + i * 0.035,
-                    duration: 0.55,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  className={cn(
-                    'inline-block',
-                    char === ' ' ? 'mx-[0.18em]' : '',
-                  )}
-                  style={{
-                    color: char === '.' ? '#39ff14' : 'white',
-                    textShadow: char === '.' ? '0 0 30px #39ff14' : undefined,
-                  }}
-                >
-                  {char === ' ' ? '\u00A0' : char}
-                </motion.span>
-              ))}
-            </div>
-          </div>
-        </h1>
+          Pickleball, <br className="hidden sm:inline" />
+          <span className="text-[var(--apple-subtext)]">perfected.</span>
+        </motion.h1>
 
         {/* Subtitle */}
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.4, duration: 0.6 }}
-          className="text-lg sm:text-xl text-white/50 max-w-xl mx-auto mb-10 font-body leading-relaxed"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-base sm:text-xl text-[var(--apple-subtext)] max-w-xl mx-auto mb-10 font-normal leading-relaxed"
         >
-          Reserve your court in seconds.{' '}
-          <span className="text-white/80 font-medium">4 premium courts,</span>{' '}
-          open 24/7.
+          Instant 24-hour court reservations. Select your court visually, choose your time interval, and receive a digital pass to your phone.
         </motion.p>
 
-        {/* CTAs */}
+        {/* Apple style CTAs */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.6, duration: 0.5 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16"
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14"
         >
-          <Link href="/book">
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: '0 0 32px rgba(57,255,20,0.5)' }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-8 py-4 rounded-xl bg-neon-green text-black font-bold text-base tracking-wide transition-all"
+          <Link href="/book" className="w-full sm:w-auto">
+            <button
+              type="button"
+              className="btn-primary w-full sm:w-auto text-sm !px-8 !py-3.5"
             >
-              Book a Court
-              <ChevronRight size={18} />
-            </motion.button>
+              <span>Book a Court</span>
+              <ChevronRight size={16} strokeWidth={2.5} />
+            </button>
           </Link>
-          <Link href="/schedule">
-            <motion.button
-              whileHover={{ scale: 1.03, borderColor: 'rgba(57,255,20,0.5)' }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-8 py-4 rounded-xl border border-white/20 text-white/80 hover:text-white font-semibold text-base transition-all"
+          <a href="#courts-preview" className="w-full sm:w-auto">
+            <button
+              type="button"
+              className="btn-secondary w-full sm:w-auto text-sm !px-7 !py-3.5"
             >
-              <Calendar size={16} />
-              View Schedule
-            </motion.button>
-          </Link>
+              <Calendar size={15} />
+              <span>View Courts & Rates</span>
+            </button>
+          </a>
         </motion.div>
 
-        {/* Floating stat badges */}
+        {/* Minimalist stat pills */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.9, duration: 0.5 }}
-          className="flex flex-wrap items-center justify-center gap-3"
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3"
         >
           {[
-            { icon: <MapPin size={14} />, value: '4 Courts', color: '#22c55e' },
-            { icon: <Clock size={14} />, value: '24/7 Access', color: '#00f5ff' },
-            { icon: <Star size={14} />, value: '$25/hr', color: '#f59e0b' },
-          ].map(({ icon, value, color }, i) => (
-            <motion.div
+            { icon: <MapPin size={13} />, value: '4 Courts', label: 'Indoor & Outdoor' },
+            { icon: <Clock size={13} />, value: '24/7 Access', label: 'All Hours' },
+            { icon: <CreditCard size={13} />, value: 'From ₱400/hr', label: 'Direct Rates' },
+          ].map(({ icon, value, label }) => (
+            <div
               key={value}
-              whileHover={{ scale: 1.07, y: -3 }}
-              transition={{ type: 'spring', stiffness: 400 }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm cursor-default"
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] shadow-sm"
             >
-              <span style={{ color }}>{icon}</span>
-              <span className="text-sm font-semibold text-white/80">{value}</span>
-            </motion.div>
+              <span className="text-[#30d158]">{icon}</span>
+              <div className="text-left">
+                <span className="text-xs font-semibold text-[var(--apple-text)] block">{value}</span>
+                <span className="text-[10px] text-[var(--apple-subtext)] block leading-tight">{label}</span>
+              </div>
+            </div>
           ))}
         </motion.div>
       </div>
-
-      {/* Scroll indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2.4 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-      >
-        <span className="text-[10px] tracking-[3px] text-white/30 uppercase font-medium">Scroll</span>
-        <motion.div
-          className="w-px h-10 bg-gradient-to-b from-neon-green/60 to-transparent"
-          animate={{ scaleY: [0, 1, 0], y: [0, 5, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </motion.div>
     </section>
   )
 }
@@ -303,35 +179,35 @@ function HeroSection() {
 // ─── Courts Preview Section ───────────────────────────────────────────────────
 function CourtsSection() {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-100px' })
+  const inView = useInView(ref, { once: true, margin: '-60px' })
 
   return (
-    <section ref={ref} className="relative py-24 bg-[#0d0d0d]">
-      {/* Section separator */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon-green/30 to-transparent" />
-
+    <section id="courts-preview" ref={ref} className="relative py-20 bg-[var(--apple-bg)] border-t border-[var(--apple-border)] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Title */}
+        {/* Section title */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="mb-12"
+          transition={{ duration: 0.5 }}
+          className="mb-10 text-center sm:text-left"
         >
-          <p className="text-xs tracking-[4px] text-neon-green/60 uppercase font-semibold mb-3">
-            Live Status
+          <p className="text-xs font-semibold text-[#30d158] uppercase tracking-wider mb-2">
+            Facility Overview
           </p>
-          <h2 className="font-display font-black text-4xl sm:text-5xl text-white tracking-tight">
-            COURTS AVAILABLE NOW
+          <h2 className="font-display font-bold text-3xl sm:text-4xl text-[var(--apple-text)] tracking-tight">
+            Championship Courts
           </h2>
+          <p className="text-sm text-[var(--apple-subtext)] mt-1 max-w-xl">
+            Choose from pro cushioned indoor courts or open-air floodlit courts. All courts feature regulation tournament net heights.
+          </p>
         </motion.div>
 
-        {/* Court map */}
+        {/* Interactive court map preview */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, delay: 0.15 }}
-          className="mb-10"
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="mb-8"
         >
           <CourtMapPicker
             selectedCourtId={null}
@@ -343,81 +219,60 @@ function CourtsSection() {
           />
         </motion.div>
 
-        {/* Court cards */}
+        {/* Apple squircle court cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {PREVIEW_COURTS.map((court, i) => (
             <motion.div
               key={court.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
-              whileHover={{ y: -4, scale: 1.02 }}
-              className="relative rounded-2xl bg-[#111] border border-white/8 overflow-hidden group cursor-default"
-              style={{
-                boxShadow: `0 0 0 0 ${court.color_hex}00`,
-              }}
+              transition={{ duration: 0.4, delay: 0.2 + i * 0.08 }}
+              className="relative rounded-3xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-[var(--apple-subtext)]/30 p-5 flex flex-col justify-between transition-all shadow-sm"
             >
-              {/* Top color bar */}
-              <div
-                className="h-1 w-full"
-                style={{ backgroundColor: court.color_hex, boxShadow: `0 0 12px ${court.color_hex}80` }}
-              />
-
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-display font-bold text-lg text-white tracking-wide">
-                      {court.name.toUpperCase()}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: court.color_hex }}
+                    />
+                    <h3 className="font-display font-semibold text-base text-[var(--apple-text)]">
+                      {court.name}
                     </h3>
-                    <p className="text-xs text-white/40 mt-0.5 capitalize">
-                      {court.surface_type} surface
-                    </p>
                   </div>
                   <span
                     className={cn(
-                      'text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide',
+                      'text-[10px] font-medium px-2 py-0.5 rounded-full',
                       court.is_indoor
-                        ? 'bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20'
-                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
                     )}
                   >
                     {court.is_indoor ? 'Indoor' : 'Outdoor'}
                   </span>
                 </div>
 
-                <p className="text-xs text-white/40 leading-relaxed mb-4">
+                <p className="text-xs text-[var(--apple-subtext)] leading-relaxed mb-4">
                   {court.description}
                 </p>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span
-                      className="text-2xl font-black font-display"
-                      style={{ color: court.color_hex }}
-                    >
-                      ${court.hourly_rate}
-                    </span>
-                    <span className="text-xs text-white/30 ml-1">/hr</span>
-                  </div>
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors"
-                    style={{
-                      borderColor: `${court.color_hex}40`,
-                      color: court.color_hex,
-                    }}
-                  >
-                    <Zap size={10} className="fill-current" />
-                    Available
-                  </motion.div>
-                </div>
               </div>
 
-              {/* Hover glow */}
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
-                style={{ boxShadow: `inset 0 0 40px ${court.color_hex}10` }}
-              />
+              <div className="pt-4 border-t border-[var(--apple-border)] flex items-center justify-between">
+                <div>
+                  <span className="text-lg font-bold text-[var(--apple-text)]">
+                    {formatCurrency(court.hourly_rate)}
+                  </span>
+                  <span className="text-xs text-[var(--apple-subtext)] ml-1">/ hour</span>
+                </div>
+                <Link href={`/book?court=${court.id}`}>
+                  <button
+                    type="button"
+                    className="text-xs font-semibold px-3.5 py-1.5 rounded-full bg-black/[0.05] dark:bg-white/10 hover:bg-black/[0.1] dark:hover:bg-white/20 text-[var(--apple-text)] transition-colors"
+                  >
+                    Select
+                  </button>
+                </Link>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -435,7 +290,7 @@ function SlotCounter({ target }: { target: number }) {
   useEffect(() => {
     if (!inView) return
     let start = 0
-    const step = Math.ceil(target / 40)
+    const step = Math.ceil(target / 30)
     const timer = setInterval(() => {
       start += step
       if (start >= target) {
@@ -444,7 +299,7 @@ function SlotCounter({ target }: { target: number }) {
       } else {
         setCount(start)
       }
-    }, 35)
+    }, 40)
     return () => clearInterval(timer)
   }, [inView, target])
 
@@ -455,44 +310,38 @@ function SlotCounter({ target }: { target: number }) {
   )
 }
 
-// ─── Bento Grid ───────────────────────────────────────────────────────────────
+// ─── Apple Bento Grid ─────────────────────────────────────────────────────────
 const BENTO_ITEMS = [
   {
     id: 'equipment',
     title: 'Equipment Rental',
-    description: 'Pro-grade paddles & balls available on demand. Borrow or demo before you buy.',
+    description: 'Pro-grade carbon fiber paddles & Franklin X-40 tournament balls ready at the reception desk.',
     icon: '🏓',
-    accent: '#39ff14',
     large: true,
-    row: 'row-span-2',
   },
   {
     id: 'proshop',
     title: 'Pro Shop',
-    description: 'Curated gear from the top brands in pickleball.',
+    description: 'Curated accessories, court grips, footwear, and performance hydration.',
     icon: '🛍️',
-    accent: '#00f5ff',
   },
   {
-    id: 'coaching',
-    title: 'Coaching',
-    description: 'One-on-one and group lessons with certified pros.',
-    icon: '🎯',
-    accent: '#f59e0b',
+    id: 'lighting',
+    title: 'Tournament Lighting',
+    description: 'Glare-free LED court illumination calibrated for nighttime competitive matches.',
+    icon: '💡',
   },
   {
     id: 'lockers',
-    title: 'Locker Rooms',
-    description: 'Premium facilities with showers, lockers & towel service.',
+    title: 'Private Amenities',
+    description: 'Full locker rooms, modern rain showers, and air-conditioned athlete lounge.',
     icon: '🚿',
-    accent: '#a78bfa',
   },
   {
     id: 'booking',
-    title: 'Real-Time Booking',
-    description: 'Instant slot visibility. Reserve and get your digital pass in seconds.',
+    title: 'Live 24-Hour Availability',
+    description: 'Immediate slot confirmation. Reserve seamlessly with atomic double-booking prevention.',
     icon: '⚡',
-    accent: '#39ff14',
     large: true,
     isCounter: true,
   },
@@ -500,81 +349,61 @@ const BENTO_ITEMS = [
 
 function BentoSection() {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
+  const inView = useInView(ref, { once: true, margin: '-60px' })
 
   return (
-    <section ref={ref} className="relative py-24 bg-[#0a0a0a]">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon-cyan/20 to-transparent" />
-
+    <section ref={ref} className="relative py-20 bg-[var(--apple-bg)] border-t border-[var(--apple-border)] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="mb-12"
+          transition={{ duration: 0.5 }}
+          className="mb-10 text-center sm:text-left"
         >
-          <p className="text-xs tracking-[4px] text-neon-cyan/60 uppercase font-semibold mb-3">
-            Everything You Need
+          <p className="text-xs font-semibold text-[var(--apple-subtext)] uppercase tracking-wider mb-2">
+            Facility Features
           </p>
-          <h2 className="font-display font-black text-4xl sm:text-5xl text-white tracking-tight">
-            WORLD-CLASS <span className="text-neon-cyan">AMENITIES</span>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl text-[var(--apple-text)] tracking-tight">
+            Designed for Players
           </h2>
+          <p className="text-sm text-[var(--apple-subtext)] mt-1 max-w-xl">
+            Every amenity is built to support competitive and casual play around the clock.
+          </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[200px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {BENTO_ITEMS.map((item, i) => (
             <motion.div
               key={item.id}
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={inView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ delay: 0.1 + i * 0.08, duration: 0.45 }}
-              whileHover={{ y: -4, scale: 1.015 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.1 + i * 0.06, duration: 0.4 }}
               className={cn(
-                'relative rounded-2xl p-6 border overflow-hidden group flex flex-col justify-between',
-                'bg-[#111] border-white/8',
-                item.row,
-                item.large && i === 0 ? 'md:row-span-2' : '',
+                'rounded-3xl p-6 bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-[var(--apple-subtext)]/30 transition-all flex flex-col justify-between shadow-sm',
+                item.large && i === 0 ? 'md:row-span-2 min-h-[320px]' : 'min-h-[200px]',
                 item.large && i === 4 ? 'md:col-span-2' : '',
               )}
-              style={{
-                background: `linear-gradient(135deg, #111 60%, ${item.accent}06)`,
-              }}
             >
-              {/* Glow blob */}
-              <div
-                className="absolute -top-12 -right-12 w-36 h-36 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-3xl pointer-events-none"
-                style={{ backgroundColor: item.accent }}
-              />
-
               <div>
                 <div className="text-3xl mb-4">{item.icon}</div>
-                <h3
-                  className="font-display font-bold text-xl text-white tracking-wide mb-2"
-                  style={{ textShadow: `0 0 20px ${item.accent}30` }}
-                >
+                <h3 className="font-display font-semibold text-lg text-[var(--apple-text)] mb-2">
                   {item.title}
                 </h3>
-                <p className="text-sm text-white/40 leading-relaxed">{item.description}</p>
+                <p className="text-xs sm:text-sm text-[var(--apple-subtext)] leading-relaxed">
+                  {item.description}
+                </p>
               </div>
 
               {item.isCounter && (
-                <div className="mt-4">
-                  <div
-                    className="text-5xl font-black font-display"
-                    style={{ color: item.accent, textShadow: `0 0 30px ${item.accent}60` }}
-                  >
-                    <SlotCounter target={47} />
+                <div className="mt-6 pt-4 border-t border-[var(--apple-border)]">
+                  <div className="text-4xl sm:text-5xl font-bold font-display text-[#30d158]">
+                    <SlotCounter target={48} />
                   </div>
-                  <p className="text-xs text-white/30 mt-1 font-medium tracking-wide">
-                    SLOTS AVAILABLE RIGHT NOW
+                  <p className="text-xs text-[var(--apple-subtext)] mt-1 font-medium">
+                    Open slots available today across 4 courts
                   </p>
                 </div>
               )}
-
-              <div
-                className="absolute bottom-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ backgroundColor: item.accent, boxShadow: `0 0 8px ${item.accent}` }}
-              />
             </motion.div>
           ))}
         </div>
@@ -586,123 +415,86 @@ function BentoSection() {
 // ─── How It Works ─────────────────────────────────────────────────────────────
 const HOW_STEPS = [
   {
-    num: '01',
-    title: 'Pick Your Court',
-    description: 'Browse our interactive 2D facility map and select your preferred court with real-time availability.',
-    icon: <MapPin size={22} />,
-    color: '#22c55e',
+    num: '1',
+    title: 'Choose Court',
+    description: 'Select your preferred surface on our visual court layout or list view.',
+    icon: <MapPin size={20} />,
   },
   {
-    num: '02',
-    title: 'Choose Your Time',
-    description: 'Drag across the timeline to select your session window. See pricing update instantly.',
-    icon: <Clock size={22} />,
-    color: '#00f5ff',
+    num: '2',
+    title: 'Select 1h Intervals',
+    description: 'Pick convenient hour blocks (e.g. 8–9, 9–10) across 24 available hours.',
+    icon: <Clock size={20} />,
   },
   {
-    num: '03',
-    title: 'Get Your Digital Pass',
-    description: 'Confirm your booking and receive an instant QR-code access pass to your phone.',
-    icon: <Zap size={22} />,
-    color: '#39ff14',
+    num: '3',
+    title: 'Digital Court Pass',
+    description: 'Get an instant QR-code pass saved to your dashboard for easy gate check-in.',
+    icon: <Sparkles size={20} />,
   },
 ]
 
 function HowItWorksSection() {
   const ref = useRef(null)
-  const inView = useInView(ref, { once: true, margin: '-80px' })
+  const inView = useInView(ref, { once: true, margin: '-60px' })
 
   return (
-    <section ref={ref} className="relative py-24 bg-[#0d0d0d]">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
+    <section ref={ref} className="relative py-20 bg-[var(--apple-bg)] border-t border-[var(--apple-border)] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
         >
-          <p className="text-xs tracking-[4px] text-neon-green/60 uppercase font-semibold mb-3">
-            Simple Process
+          <p className="text-xs font-semibold text-[#30d158] uppercase tracking-wider mb-2">
+            Effortless Booking
           </p>
-          <h2 className="font-display font-black text-4xl sm:text-5xl text-white tracking-tight">
-            HOW IT <span className="text-neon-green">WORKS</span>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl text-[var(--apple-text)] tracking-tight">
+            How It Works
           </h2>
         </motion.div>
 
-        <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Connector lines */}
-          <div className="hidden md:block absolute top-[4.5rem] left-[calc(16.67%+1.5rem)] right-[calc(16.67%+1.5rem)] h-px pointer-events-none z-0">
-            <motion.div
-              initial={{ scaleX: 0 }}
-              animate={inView ? { scaleX: 1 } : {}}
-              transition={{ duration: 1, delay: 0.6, ease: 'easeOut' }}
-              className="h-full origin-left"
-              style={{
-                background: 'linear-gradient(90deg, #22c55e, #00f5ff, #39ff14)',
-                boxShadow: '0 0 8px rgba(57,255,20,0.3)',
-              }}
-            />
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {HOW_STEPS.map((step, i) => (
             <motion.div
               key={step.num}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 24 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.2 + i * 0.18, duration: 0.55 }}
-              className="relative z-10 flex flex-col items-center text-center"
+              transition={{ delay: 0.15 + i * 0.1, duration: 0.5 }}
+              className="rounded-3xl bg-[var(--apple-card)] border border-[var(--apple-border)] p-6 flex flex-col items-center text-center shadow-sm"
             >
-              {/* Icon circle */}
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 relative"
-                style={{
-                  backgroundColor: `${step.color}12`,
-                  border: `1.5px solid ${step.color}40`,
-                  boxShadow: `0 0 20px ${step.color}20`,
-                }}
-              >
-                <span style={{ color: step.color }}>{step.icon}</span>
-                <div
-                  className="absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-black"
-                  style={{
-                    backgroundColor: step.color,
-                    color: '#000',
-                    boxShadow: `0 0 12px ${step.color}80`,
-                  }}
-                >
-                  {i + 1}
-                </div>
-              </motion.div>
-
-              <h3 className="font-display font-bold text-xl text-white mb-3 tracking-wide">
+              <div className="w-12 h-12 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-[var(--apple-text)] mb-4">
+                {step.icon}
+              </div>
+              <div className="w-6 h-6 rounded-full bg-[#30d158]/15 text-[#30d158] text-xs font-bold flex items-center justify-center mb-2">
+                {step.num}
+              </div>
+              <h3 className="font-display font-semibold text-base text-[var(--apple-text)] mb-2">
                 {step.title}
               </h3>
-              <p className="text-sm text-white/40 leading-relaxed max-w-xs">
+              <p className="text-xs sm:text-sm text-[var(--apple-subtext)] leading-relaxed max-w-xs">
                 {step.description}
               </p>
             </motion.div>
           ))}
         </div>
 
-        {/* CTA */}
+        {/* Call to action */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.9 }}
-          className="mt-16 text-center"
+          transition={{ delay: 0.4 }}
+          className="mt-12 text-center"
         >
           <Link href="/book">
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: '0 0 32px rgba(57,255,20,0.4)' }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-neon-green text-black font-bold text-base tracking-wide transition-all"
+            <button
+              type="button"
+              className="btn-primary inline-flex text-sm !px-8 !py-3.5"
             >
-              Start Booking
-              <ChevronRight size={18} />
-            </motion.button>
+              <span>Reserve a Court</span>
+              <ChevronRight size={16} strokeWidth={2.5} />
+            </button>
           </Link>
         </motion.div>
       </div>
@@ -710,98 +502,10 @@ function HowItWorksSection() {
   )
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────────────
-function Footer() {
-  return (
-    <footer className="relative bg-black border-t border-white/8 pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
-          {/* Logo + tagline */}
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-1.5 mb-4">
-              <Zap size={20} className="text-neon-green fill-neon-green drop-shadow-[0_0_6px_#39ff14]" />
-              <span className="font-display font-black text-2xl tracking-tight">
-                <span className="text-neon-green">PICK</span>
-                <span className="text-white">COURT</span>
-              </span>
-            </div>
-            <p className="text-sm text-white/40 leading-relaxed max-w-xs">
-              Premium pickleball courts available 24/7. Book online, play instantly.
-            </p>
-            <div className="flex items-center gap-3 mt-6">
-              {['𝕏', 'in', 'ig', 'yt'].map((s) => (
-                <motion.button
-                  key={s}
-                  whileHover={{ scale: 1.15, color: '#39ff14' }}
-                  className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-sm text-white/50 hover:border-neon-green/30 transition-colors"
-                >
-                  {s}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-
-          {/* Links */}
-          <div>
-            <p className="text-xs font-bold tracking-[3px] text-white/30 uppercase mb-4">
-              Facility
-            </p>
-            <nav className="flex flex-col gap-2">
-              {['Courts', 'Schedule', 'Pricing', 'Amenities', 'About Us'].map((l) => (
-                <Link
-                  key={l}
-                  href="#"
-                  className="text-sm text-white/50 hover:text-white transition-colors"
-                >
-                  {l}
-                </Link>
-              ))}
-            </nav>
-          </div>
-
-          <div>
-            <p className="text-xs font-bold tracking-[3px] text-white/30 uppercase mb-4">
-              Account
-            </p>
-            <nav className="flex flex-col gap-2">
-              {['Sign Up', 'Login', 'My Bookings', 'Dashboard', 'Support'].map((l) => (
-                <Link
-                  key={l}
-                  href="#"
-                  className="text-sm text-white/50 hover:text-white transition-colors"
-                >
-                  {l}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-white/8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white/25">
-            © {new Date().getFullYear()} PickCourt. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4">
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((l) => (
-              <Link
-                key={l}
-                href="#"
-                className="text-xs text-white/25 hover:text-white/50 transition-colors"
-              >
-                {l}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-    </footer>
-  )
-}
-
 // ─── Page Root ────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
-    <main className="min-h-screen bg-[#0d0d0d] text-white font-body antialiased">
+    <main className="min-h-screen bg-[var(--apple-bg)] text-[var(--apple-text)] font-body antialiased transition-colors">
       <HeroSection />
       <CourtsSection />
       <BentoSection />

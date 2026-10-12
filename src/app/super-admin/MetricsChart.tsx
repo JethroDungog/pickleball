@@ -104,7 +104,6 @@ export default function MetricsChart({ data, width = 600, height = 180 }: Metric
 
   const strokeDashoffset = useTransform(pathProgress, (v) => pathLength - v)
 
-  const gradientId = 'revenue-gradient'
   const glowId = 'line-glow'
 
   return (
@@ -118,12 +117,8 @@ export default function MetricsChart({ data, width = 600, height = 180 }: Metric
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#39ff14" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#39ff14" stopOpacity="0" />
-          </linearGradient>
           <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feGaussianBlur stdDeviation="2" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -176,7 +171,7 @@ export default function MetricsChart({ data, width = 600, height = 180 }: Metric
         {/* Area fill */}
         <motion.path
           d={areaPath}
-          fill={`url(#${gradientId})`}
+          fill="#39ff1408"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.8 }}

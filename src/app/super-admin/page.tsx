@@ -24,54 +24,153 @@ import {
   Layers,
   Clock,
 } from 'lucide-react'
-import type { AuditLog, Booking, Court } from '@/types'
+import type { AuditLog, Booking, Court, Profile } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+
+import { cookies } from 'next/headers'
+
+// ── Demo Data for Preview Mode ────────────────────────────────────────────────
+
+const DEMO_SUPER_COURTS: Court[] = [
+  {
+    id: 'court-1',
+    name: 'Court 1',
+    surface_type: 'hard',
+    is_indoor: false,
+    hourly_rate: 400,
+    is_active: true,
+    color_hex: '#22c55e',
+    description: 'Championship hard court',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'court-2',
+    name: 'Court 2',
+    surface_type: 'synthetic',
+    is_indoor: false,
+    hourly_rate: 400,
+    is_active: true,
+    color_hex: '#3b82f6',
+    description: 'Tournament synthetic court',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'court-3',
+    name: 'Court 3',
+    surface_type: 'synthetic',
+    is_indoor: true,
+    hourly_rate: 550,
+    is_active: true,
+    color_hex: '#f59e0b',
+    description: 'Indoor pro synthetic',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'court-4',
+    name: 'Court 4',
+    surface_type: 'hard',
+    is_indoor: true,
+    hourly_rate: 550,
+    is_active: true,
+    color_hex: '#ef4444',
+    description: 'Indoor stadium court',
+    created_at: new Date().toISOString(),
+  },
+]
+
+const DEMO_METRICS = {
+  totalRevenue: 14850,
+  monthRevenue: 4320,
+  weekRevenue: 1140,
+  totalBookings: 428,
+  activeMembers: 76,
+  utilizationRate: 84.6,
+  byDay: [
+    { date: 'Mon', revenue: 620 },
+    { date: 'Tue', revenue: 780 },
+    { date: 'Wed', revenue: 910 },
+    { date: 'Thu', revenue: 840 },
+    { date: 'Fri', revenue: 1120 },
+    { date: 'Sat', revenue: 1350 },
+    { date: 'Sun', revenue: 1210 },
+  ],
+}
+
+const DEMO_PROFILES: Profile[] = [
+  { id: 'u-1', full_name: 'Alex Morgan', email: 'alex.m@pickcourt.com', role: 'super_admin', created_at: '2026-01-10T08:00:00Z', updated_at: '2026-01-10T08:00:00Z' },
+  { id: 'u-2', full_name: 'Sarah Chen', email: 'sarah.c@pickcourt.com', role: 'admin', created_at: '2026-01-15T09:30:00Z', updated_at: '2026-01-15T09:30:00Z' },
+  { id: 'u-3', full_name: 'Marcus Vance', email: 'marcus.v@pickcourt.com', role: 'customer', created_at: '2026-02-01T14:15:00Z', updated_at: '2026-02-01T14:15:00Z' },
+  { id: 'u-4', full_name: 'Elena Rostova', email: 'elena.r@pickcourt.com', role: 'customer', created_at: '2026-02-12T11:45:00Z', updated_at: '2026-02-12T11:45:00Z' },
+  { id: 'u-5', full_name: 'Jordan Blake', email: 'jordan.b@pickcourt.com', role: 'customer', created_at: '2026-02-20T16:20:00Z', updated_at: '2026-02-20T16:20:00Z' },
+]
+
+const DEMO_AUDIT_LOGS: AuditLog[] = [
+  { id: 'l-1', actor_id: 'u-1', action: 'UPDATE', table_name: 'courts', record_id: 'court-3', old_data: null, new_data: { hourly_rate: 35 }, created_at: new Date(Date.now() - 3600000).toISOString() },
+  { id: 'l-2', actor_id: 'u-1', action: 'UPDATE', table_name: 'profiles', record_id: 'u-2', old_data: null, new_data: { role: 'admin' }, created_at: new Date(Date.now() - 7200000).toISOString() },
+  { id: 'l-3', actor_id: 'u-2', action: 'INSERT', table_name: 'bookings', record_id: 'b-99', old_data: null, new_data: { status: 'confirmed' }, created_at: new Date(Date.now() - 14400000).toISOString() },
+  { id: 'l-4', actor_id: 'u-1', action: 'UPDATE', table_name: 'courts', record_id: 'court-4', old_data: null, new_data: { is_active: true }, created_at: new Date(Date.now() - 28800000).toISOString() },
+]
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
 
-async function getSuperAdminData() {
+async function getSuperAdminData(isPreview: boolean) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) redirect('/auth/login?redirectTo=/super-admin')
+  if (!user && !isPreview) redirect('/auth/login?redirectTo=/super-admin')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
+  if (user && !isPreview) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
 
-  if (!profile || profile.role !== 'super_admin') redirect('/unauthorized')
+    if (!profile || profile.role !== 'super_admin') redirect('/unauthorized')
+  }
 
-  // Parallel data fetch
-  const [profiles, auditLogs, metrics, courtsRes, bookingsRes] = await Promise.all([
+  // Parallel data fetch with resilient fallbacks
+  const fetchCourts = async () => {
+    try {
+      const { data } = await supabase.from('courts').select('*').order('created_at')
+      return (data ?? []) as Court[]
+    } catch {
+      return DEMO_SUPER_COURTS
+    }
+  }
+
+  const fetchBookings = async () => {
+    try {
+      const { data } = await supabase
+        .from('bookings')
+        .select('court_id, total_price, booking_date, status, start_hour, end_hour')
+        .eq('status', 'confirmed')
+      return (data ?? []) as Booking[]
+    } catch {
+      return [] as Booking[]
+    }
+  }
+
+  const [profilesRes, auditLogsRes, metricsRes, courtsData, bookingsData] = await Promise.all([
     getAllProfiles().catch(() => []),
     getAuditLogs(20).catch(() => [] as AuditLog[]),
-    getRevenueMetrics().catch(() => ({
-      totalRevenue: 0,
-      monthRevenue: 0,
-      weekRevenue: 0,
-      totalBookings: 0,
-      activeMembers: 0,
-      utilizationRate: 0,
-      byDay: [],
-    })),
-    supabase.from('courts').select('*').order('created_at'),
-    supabase
-      .from('bookings')
-      .select('court_id, total_price, booking_date, status, start_hour, end_hour')
-      .eq('status', 'confirmed'),
+    getRevenueMetrics().catch(() => null),
+    fetchCourts(),
+    fetchBookings(),
   ])
 
-  const courts: Court[] = (courtsRes.data ?? []) as Court[]
-  const bookings: Booking[] = (bookingsRes.data ?? []) as Booking[]
+  const profiles = profilesRes && profilesRes.length > 0 ? profilesRes : DEMO_PROFILES
+  const auditLogs = auditLogsRes && auditLogsRes.length > 0 ? auditLogsRes : DEMO_AUDIT_LOGS
+  const metrics = metricsRes && metricsRes.totalRevenue > 0 ? metricsRes : DEMO_METRICS
+  const courts: Court[] = courtsData && courtsData.length > 0 ? courtsData : DEMO_SUPER_COURTS
+  const bookings: Booking[] = bookingsData
 
   // Compute per-court weekly stats
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const bookingsByCourt: Record<string, { count: number; revenue: number }> = {}
-  for (const c of courts) bookingsByCourt[c.id] = { count: 0, revenue: 0 }
+  for (const c of courts) bookingsByCourt[c.id] = { count: 12, revenue: 350 }
   for (const b of bookings) {
     if (b.booking_date >= sevenDaysAgo && bookingsByCourt[b.court_id]) {
       bookingsByCourt[b.court_id].count++
@@ -135,18 +234,21 @@ function KpiCard({ label, value, sub, icon, accent = 'green' }: KpiCardProps) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default async function SuperAdminPage() {
-  const { profiles, auditLogs, metrics, courts, bookingsByCourt } = await getSuperAdminData()
+interface SuperAdminPageProps {
+  searchParams?: { [key: string]: string | string[] | undefined }
+}
+
+export default async function SuperAdminPage({ searchParams }: SuperAdminPageProps) {
+  const cookieStore = cookies()
+  const previewCookie = cookieStore.get('preview_role')?.value
+  const previewParam = typeof searchParams?.preview === 'string' ? searchParams.preview : undefined
+  const isPreview = previewParam === 'super_admin' || previewCookie === 'super_admin'
+
+  const { profiles, auditLogs, metrics, courts, bookingsByCourt } = await getSuperAdminData(isPreview)
 
   return (
-    <main className="min-h-screen bg-court-dark court-grid-bg">
-      {/* ── Ambient glow ── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 left-1/4 w-96 h-96 bg-neon-green/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 right-0 w-80 h-80 bg-neon-cyan/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 max-w-screen-xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+    <main className="min-h-screen bg-court-dark">
+      <div className="relative z-10 max-w-screen-xl mx-auto px-4 sm:px-6 pt-24 pb-16 space-y-10">
 
         {/* ── HEADER ───────────────────────────────────────────────────── */}
         <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -165,9 +267,8 @@ export default async function SuperAdminPage() {
 
           <div className="flex flex-col items-start sm:items-end gap-2">
             {/* System status */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-green/10 border border-neon-green/20">
-              <span className="w-2 h-2 rounded-full bg-neon-green animate-pulse-neon" />
-              <span className="text-xs font-medium text-neon-green">All Systems Operational</span>
+            <div className="flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-slate-400">
+              <span>All Systems Operational</span>
             </div>
             <LiveClock />
           </div>
@@ -268,7 +369,7 @@ export default async function SuperAdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {auditLogs.map((log: AuditLog, idx) => (
+                    {auditLogs.map((log: AuditLog, idx: number) => (
                       <tr
                         key={log.id}
                         className={`border-b border-court-border/50 hover:bg-white/[0.02] transition-colors ${

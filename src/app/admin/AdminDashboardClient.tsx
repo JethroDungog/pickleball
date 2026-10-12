@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
 import {
   Activity,
-  DollarSign,
+  CreditCard,
   Grid3X3,
   BarChart3,
   CheckCircle,
@@ -16,6 +16,7 @@ import {
   Clock,
   PlusCircle,
   Zap,
+  Calendar,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
@@ -253,16 +254,7 @@ export default function AdminDashboardClient({ bookings: initialBookings, courts
 
   return (
     <div className="min-h-screen bg-court-dark text-slate-100">
-      {/* BG texture */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #ffffff05 1px, transparent 1px)',
-          backgroundSize: '32px 32px',
-        }}
-      />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16 space-y-8">
         {/* ── Header ── */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
@@ -298,7 +290,7 @@ export default function AdminDashboardClient({ bookings: initialBookings, courts
           <MetricCard index={0} icon={Activity} label="Today's Bookings" value={confirmedCount} />
           <MetricCard
             index={1}
-            icon={DollarSign}
+            icon={CreditCard}
             label="Revenue Today"
             value={formatCurrency(revenue)}
             accent="text-neon-green"
@@ -456,44 +448,54 @@ export default function AdminDashboardClient({ bookings: initialBookings, courts
             </div>
           </motion.div>
 
-          {/* Add manual booking placeholder */}
+          {/* Staff Quick Actions */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
-            className="bg-court-card border border-court-border rounded-2xl p-6 space-y-4"
+            className="rounded-3xl bg-[#1c1c1e] border border-white/[0.08] p-6 space-y-4"
           >
             <div className="flex items-center gap-2">
-              <PlusCircle size={15} className="text-neon-green" />
-              <h2 className="font-display font-bold text-lg text-white">QUICK ACTIONS</h2>
+              <PlusCircle size={16} className="text-[#30d158]" />
+              <h2 className="font-display font-semibold text-lg text-white">Manager Quick Actions</h2>
             </div>
             <div className="space-y-3">
               <a
                 href="/book"
-                className="flex items-center justify-between p-3 rounded-xl bg-court-surface border border-court-border hover:border-neon-green/40 hover:bg-neon-green/5 transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:border-white/20 hover:bg-white/[0.08] transition-all group"
               >
                 <div className="flex items-center gap-2.5">
-                  <PlusCircle size={14} className="text-neon-green" />
-                  <span className="text-sm font-medium text-white">Add Manual Booking</span>
+                  <PlusCircle size={15} className="text-[#30d158]" />
+                  <span className="text-sm font-medium text-white">Walk-in Player Booking</span>
                 </div>
-                <span className="text-slate-600 group-hover:text-neon-green transition-colors text-xs">→</span>
+                <span className="text-white/40 group-hover:text-white transition-colors text-xs">→</span>
               </a>
               <a
-                href="/dashboard"
-                className="flex items-center justify-between p-3 rounded-xl bg-court-surface border border-court-border hover:border-slate-600 transition-all group"
+                href="/schedule"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:border-white/20 hover:bg-white/[0.08] transition-all group"
               >
                 <div className="flex items-center gap-2.5">
-                  <Users size={14} className="text-slate-400" />
-                  <span className="text-sm font-medium text-white">Customer Dashboard</span>
+                  <Calendar size={15} className="text-blue-400" />
+                  <span className="text-sm font-medium text-white">Live Facility Schedule</span>
                 </div>
-                <span className="text-slate-600 group-hover:text-slate-400 transition-colors text-xs">→</span>
+                <span className="text-white/40 group-hover:text-white transition-colors text-xs">→</span>
               </a>
-              <div className="p-3 rounded-xl bg-court-surface border border-court-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Activity size={13} className="text-slate-500" />
-                  <span className="text-xs text-slate-500 font-medium">Revenue today</span>
+              <a
+                href="/super-admin"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.06] hover:border-white/20 hover:bg-white/[0.08] transition-all group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Wrench size={15} className="text-amber-400" />
+                  <span className="text-sm font-medium text-white">Facility Rates & Super Admin</span>
                 </div>
-                <p className="font-display font-bold text-2xl text-neon-green">
+                <span className="text-white/40 group-hover:text-white transition-colors text-xs">→</span>
+              </a>
+              <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Activity size={13} className="text-white/40" />
+                  <span className="text-xs text-white/50 font-medium">Today's Revenue</span>
+                </div>
+                <p className="font-display font-bold text-2xl text-[#30d158]">
                   {formatCurrency(revenue)}
                 </p>
               </div>

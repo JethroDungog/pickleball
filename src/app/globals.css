@@ -2,19 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS Custom Properties ────────────────────────────────────────────────── */
+/* ── Apple Light Mode (Default) ────────────────────────────────────────────── */
 :root {
-  --color-court-green: #22c55e;
-  --color-court-blue: #1d4ed8;
-  --color-court-clay: #1a1007;
-  --color-court-dark: #0d0d0d;
-  --color-court-surface: #111111;
-  --color-court-card: #161616;
-  --color-court-border: #242424;
-  --color-neon-green: #39ff14;
-  --color-neon-yellow: #ffe600;
-  --color-neon-pink: #ff006e;
-  --color-neon-cyan: #00f5ff;
+  --apple-bg: #fbfbfd;
+  --apple-canvas: #ffffff;
+  --apple-card: #ffffff;
+  --apple-card-hover: #f5f5f7;
+  --apple-elevated: #f5f5f7;
+  --apple-border: rgba(0, 0, 0, 0.08);
+  --apple-border-subtle: rgba(0, 0, 0, 0.04);
+  --apple-text: #1d1d1f;
+  --apple-subtext: #6e6e73;
+  --apple-muted: #86868b;
+  --apple-pill-bg: #000000;
+  --apple-pill-text: #ffffff;
+  --apple-pill-hover: #2c2c2e;
+  --apple-secondary-btn-bg: rgba(0, 0, 0, 0.05);
+  --apple-secondary-btn-text: #1d1d1f;
+  --apple-secondary-btn-hover: rgba(0, 0, 0, 0.08);
+  --apple-green: #34c759;
+  --apple-blue: #0071e3;
+  --apple-amber: #ff9500;
+  --apple-court-line: rgba(0, 0, 0, 0.06);
+  --apple-court-line-active: #34c759;
+  --apple-nav-bg: rgba(255, 255, 255, 0.85);
+  --apple-nav-border: rgba(0, 0, 0, 0.06);
+  --apple-card-shadow: 0 2px 14px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.03);
+
+  /* Legacy aliases mapped dynamically */
+  --color-court-green: var(--apple-green);
+  --color-court-blue: var(--apple-blue);
+  --color-court-clay: #f5f5f7;
+  --color-court-dark: var(--apple-bg);
+  --color-court-surface: var(--apple-card);
+  --color-court-card: var(--apple-card);
+  --color-court-border: var(--apple-border);
+  --color-neon-green: var(--apple-green);
+  --color-neon-yellow: var(--apple-amber);
+  --color-neon-pink: #ff3b30;
+  --color-neon-cyan: var(--apple-blue);
+}
+
+/* ── Apple Dark Mode ───────────────────────────────────────────────────────── */
+html.dark, [data-theme="dark"] {
+  --apple-bg: #000000;
+  --apple-canvas: #000000;
+  --apple-card: #1c1c1e;
+  --apple-card-hover: #2c2c2e;
+  --apple-elevated: #2c2c2e;
+  --apple-border: rgba(255, 255, 255, 0.08);
+  --apple-border-subtle: rgba(255, 255, 255, 0.04);
+  --apple-text: #ffffff;
+  --apple-subtext: #a1a1a6;
+  --apple-muted: #86868b;
+  --apple-pill-bg: #ffffff;
+  --apple-pill-text: #000000;
+  --apple-pill-hover: #e5e5ea;
+  --apple-secondary-btn-bg: rgba(255, 255, 255, 0.08);
+  --apple-secondary-btn-text: #ffffff;
+  --apple-secondary-btn-hover: rgba(255, 255, 255, 0.12);
+  --apple-green: #30d158;
+  --apple-blue: #0a84ff;
+  --apple-amber: #ff9f0a;
+  --apple-court-line: rgba(255, 255, 255, 0.04);
+  --apple-court-line-active: #30d158;
+  --apple-nav-bg: rgba(0, 0, 0, 0.82);
+  --apple-nav-border: rgba(255, 255, 255, 0.08);
+  --apple-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+
+  --color-court-dark: #000000;
+  --color-court-surface: #121214;
+  --color-court-card: #1c1c1e;
+  --color-court-border: rgba(255, 255, 255, 0.08);
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
@@ -22,18 +81,26 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100vw;
+  background-color: var(--apple-bg);
 }
 
 body {
-  background-color: var(--color-court-dark);
-  color: #f1f5f9;
-  font-family: var(--font-body), system-ui, sans-serif;
+  background-color: var(--apple-bg);
+  color: var(--apple-text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-body), system-ui, sans-serif;
+  overflow-x: hidden;
+  max-width: 100vw;
+  position: relative;
+  letter-spacing: -0.01em;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ── Text selection ───────────────────────────────────────────────────────── */
 ::selection {
-  background-color: rgba(57, 255, 20, 0.25);
-  color: #ffffff;
+  background-color: rgba(52, 199, 89, 0.25);
+  color: inherit;
 }
 
 /* ── Custom scrollbar ─────────────────────────────────────────────────────── */
@@ -43,78 +110,86 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-court-surface);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-court-border);
+  background: rgba(120, 120, 128, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f3f;
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-court-border) var(--color-court-surface);
+  background: rgba(120, 120, 128, 0.4);
 }
 
 /* ── Component utilities ──────────────────────────────────────────────────── */
 @layer components {
   .glass {
-    @apply backdrop-blur-xl bg-white/5 border border-white/10;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    background-color: var(--apple-card);
+    border: 1px solid var(--apple-border);
   }
 
   .glass-dark {
-    @apply backdrop-blur-xl bg-black/40 border border-white/5;
-  }
-
-  .neon-text-green {
-    color: var(--color-neon-green);
-    filter: drop-shadow(0 0 8px rgba(57, 255, 20, 0.7)) drop-shadow(0 0 20px rgba(57, 255, 20, 0.4));
-  }
-
-  .neon-text-cyan {
-    color: var(--color-neon-cyan);
-    filter: drop-shadow(0 0 8px rgba(0, 245, 255, 0.7)) drop-shadow(0 0 20px rgba(0, 245, 255, 0.4));
-  }
-
-  .court-grid-bg {
-    background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px);
-    background-size: 24px 24px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    background-color: var(--apple-card);
+    border: 1px solid var(--apple-border);
   }
 
   .card-hover {
-    @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-glass;
+    @apply transition-all duration-200 hover:opacity-95;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
-           bg-neon-green text-court-dark font-semibold text-sm
-           transition-all duration-200
-           hover:brightness-110 hover:shadow-neon-green
-           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    border-radius: 9999px;
+    background-color: var(--apple-pill-bg);
+    color: var(--apple-pill-text);
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .btn-primary:hover {
+    background-color: var(--apple-pill-hover);
+  }
+  .btn-primary:active {
+    transform: scale(0.96);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
-           border border-court-border bg-court-card text-slate-200 font-medium text-sm
-           transition-all duration-200
-           hover:border-neon-green/40 hover:text-neon-green
-           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    border-radius: 9999px;
+    background-color: var(--apple-secondary-btn-bg);
+    color: var(--apple-secondary-btn-text);
+    border: 1px solid var(--apple-border);
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .btn-secondary:hover {
+    background-color: var(--apple-secondary-btn-hover);
+  }
+  .btn-secondary:active {
+    transform: scale(0.96);
   }
 
-  .input-field {
-    @apply w-full px-4 py-3 rounded-xl
-           bg-court-card border border-court-border
-           text-slate-100 placeholder:text-slate-500
-           focus:outline-none focus:ring-2 focus:ring-neon-green/40 focus:border-neon-green/60
-           transition-all duration-200;
-  }
-
-  .section-heading {
-    @apply font-display font-bold tracking-tight text-white;
+  .apple-card {
+    background-color: var(--apple-card);
+    border: 1px solid var(--apple-border);
+    box-shadow: var(--apple-card-shadow);
+    border-radius: 1.5rem;
   }
 }

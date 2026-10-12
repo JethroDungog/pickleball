@@ -8,9 +8,9 @@ import type { Court, Booking } from '@/types'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const START_HOUR = 6   // 6 AM
-const END_HOUR = 22    // 10 PM
-const HOUR_WIDTH = 80  // px per hour column
+const START_HOUR = 0   // 12 AM (24/7)
+const END_HOUR = 24    // 12 AM next day
+const HOUR_WIDTH = 70  // px per hour column
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ export default function MultiCourtGantt({
   const totalWidth = HOURS.length * HOUR_WIDTH
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-white/10" style={{ background: '#0d0d0d' }}>
+    <div className="relative rounded-2xl overflow-hidden border border-white/10 w-full max-w-full min-w-0" style={{ background: '#0d0d0d' }}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
         <h3 className="text-sm font-semibold tracking-wide text-white/80" style={{ fontFamily: 'Syne, sans-serif' }}>
@@ -91,9 +91,9 @@ export default function MultiCourtGantt({
       </div>
 
       {/* Layout: sticky court column + scrollable timeline */}
-      <div className="flex">
+      <div className="flex w-full min-w-0 overflow-hidden">
         {/* Sticky court name column */}
-        <div className="flex-shrink-0 w-36 border-r border-white/10">
+        <div className="flex-shrink-0 w-28 sm:w-36 border-r border-white/10 bg-[#0d0d0d] z-20">
           {/* Spacer row for hour header */}
           <div className="h-10 border-b border-white/10 flex items-center px-3">
             <span className="text-xs text-white/30 font-mono">COURT</span>
@@ -118,7 +118,7 @@ export default function MultiCourtGantt({
         </div>
 
         {/* Scrollable timeline */}
-        <div ref={scrollRef} className="flex-1 overflow-x-auto relative" style={{ scrollbarWidth: 'thin' }}>
+        <div ref={scrollRef} className="flex-1 min-w-0 overflow-x-auto relative" style={{ scrollbarWidth: 'thin' }}>
           <div style={{ width: totalWidth, minWidth: '100%', position: 'relative' }}>
             {/* Hour header row */}
             <div className="h-10 border-b border-white/10 flex sticky top-0 z-10" style={{ background: '#0d0d0d' }}>
@@ -210,16 +210,7 @@ function CourtRow({ court, bookings, isAdmin, idx, onSlotClick, totalWidth }: Co
           className="absolute top-0 h-full border-r border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
           style={{ left: (hour - START_HOUR) * HOUR_WIDTH, width: HOUR_WIDTH }}
           aria-label={`Book ${court.name} at ${formatHour(hour)}`}
-        >
-          {/* Dotted available pattern */}
-          <div
-            className="absolute inset-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{
-              backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)`,
-              backgroundSize: '8px 8px',
-            }}
-          />
-        </button>
+        />
       ))}
 
       {/* Booking blocks */}
@@ -264,7 +255,7 @@ function BookingBlock({ booking, court, isAdmin }: BookingBlockProps) {
         left: left + 2,
         width,
         background: isMaintenance
-          ? 'repeating-linear-gradient(45deg, rgba(255,200,0,0.15), rgba(255,200,0,0.15) 4px, transparent 4px, transparent 10px)'
+          ? 'rgba(255,200,0,0.12)'
           : `${court.color_hex}22`,
         border: `1px solid ${isMaintenance ? 'rgba(255,200,0,0.4)' : court.color_hex + '55'}`,
       }}

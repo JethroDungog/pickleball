@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, addDays, parseISO, isToday } from 'date-fns'
 import { Map, AlignLeft, ChevronLeft, Loader2, AlertCircle } from 'lucide-react'
@@ -11,33 +12,84 @@ import { createBooking } from '@/actions/bookings'
 import { cn, formatHour, formatCurrency, getSlotStatus } from '@/lib/utils'
 import type { Court, Booking, BookingDraft } from '@/types'
 
+import CourtSelectorCards from '@/components/CourtSelectorCards'
 import CourtMapPicker from '@/components/CourtMapPicker'
-import BookingTimeline from '@/components/BookingTimeline'
+import TimeSlotPicker from '@/components/TimeSlotPicker'
 import ReservationDock from '@/components/ReservationDock'
 import MultiCourtGantt from '@/components/MultiCourtGantt'
+import Footer from '@/components/Footer'
 import BookingSuccessOverlay from './BookingSuccessOverlay'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const DATE_STRIP_DAYS = 14
 
+const FALLBACK_COURTS: Court[] = [
+  {
+    id: 'court-1-default',
+    name: 'Court 1',
+    description: 'Championship hard court with tournament-grade lighting',
+    surface_type: 'hard',
+    is_indoor: false,
+    hourly_rate: 400, // PHP 400/hr
+    is_active: true,
+    color_hex: '#22c55e',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'court-2-default',
+    name: 'Court 2',
+    description: 'Tournament grade synthetic court with shock absorption',
+    surface_type: 'synthetic',
+    is_indoor: false,
+    hourly_rate: 400, // PHP 400/hr
+    is_active: true,
+    color_hex: '#3b82f6',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'court-3-default',
+    name: 'Court 3',
+    description: 'Indoor climate-controlled pro synthetic court',
+    surface_type: 'synthetic',
+    is_indoor: true,
+    hourly_rate: 550, // PHP 550/hr
+    is_active: true,
+    color_hex: '#f59e0b',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'court-4-default',
+    name: 'Court 4',
+    description: 'Indoor stadium arena with broadcast lighting',
+    surface_type: 'hard',
+    is_indoor: true,
+    hourly_rate: 550, // PHP 550/hr
+    is_active: true,
+    color_hex: '#ef4444',
+    created_at: new Date().toISOString(),
+  },
+]
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function BookPage() {
+  const router = useRouter()
+
   // ── State ──────────────────────────────────────────────────────────────────
-  const [selectedCourtId, setSelectedCourtId] = useState<string | null>(null)
+  const [selectedCourtId, setSelectedCourtId] = useState<string | null>(FALLBACK_COURTS[0].id)
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [selectedStartHour, setSelectedStartHour] = useState<number | null>(null)
   const [selectedEndHour, setSelectedEndHour] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<'map' | 'timeline'>('map')
-  const [courts, setCourts] = useState<Court[]>([])
+  const [courts, setCourts] = useState<Court[]>(FALLBACK_COURTS)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [isBooking, setIsBooking] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState<{
     booking: Booking
     court: Court
   } | null>(null)
-  const [loadingCourts, setLoadingCourts] = useState(true)
+  const [loadingCourts, setLoadingCourts] = useState(false)
   const [loadingBookings, setLoadingBookings] = useState(false)
   const [notes, setNotes] = useState('')
 
@@ -52,20 +104,20 @@ export default function BookPage() {
   // ── Fetch courts on mount ──────────────────────────────────────────────────
   useEffect(() => {
     async function fetchCourts() {
-      setLoadingCourts(true)
-      const { data, error } = await supabase
-        .from('courts')
-        .select('*')
-        .eq('is_active', true)
-        .order('name')
+      try {
+        const { data, error } = await supabase
+          .from('courts')
+          .select('*')
+          .eq('is_active', true)
+          .order('name')
 
-      if (error) {
-        toast.error('Failed to load courts')
-        console.error('[BookPage] fetchCourts:', error)
-      } else {
-        setCourts(data as Court[])
+        if (!error && data && data.length > 0) {
+          setCourts(data as Court[])
+          setSelectedCourtId((prev) => (prev && data.some((c) => c.id === prev) ? prev : data[0].id))
+        }
+      } catch (err) {
+        // Fallback courts remain active
       }
-      setLoadingCourts(false)
     }
     fetchCourts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,67 +144,28 @@ export default function BookPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate])
 
-  // ── Time selection logic ───────────────────────────────────────────────────
-  const handleHourClick = useCallback(
-    (hour: number, courtId?: string) => {
-      // If a court is passed (from Gantt), select it first
-      if (courtId && courtId !== selectedCourtId) {
-        setSelectedCourtId(courtId)
-        setSelectedStartHour(hour)
-        setSelectedEndHour(null)
-        return
-      }
+  // ── Select time range handler ──────────────────────────────────────────────
+  const handleSelectRange = useCallback((startHour: number, endHour: number) => {
+    setSelectedStartHour(startHour)
+    setSelectedEndHour(endHour)
+  }, [])
 
-      if (selectedStartHour === null) {
-        // First click: set start
-        setSelectedStartHour(hour)
-        setSelectedEndHour(null)
-      } else if (selectedEndHour === null) {
-        // Second click: set end (validate)
-        if (hour <= selectedStartHour) {
-          toast.error('End time must be after start time')
-          return
-        }
-        if (hour - selectedStartHour > 4) {
-          toast.error('Maximum booking is 4 hours')
-          return
-        }
-        // Check for conflicts
-        if (selectedCourtId) {
-          for (let h = selectedStartHour; h < hour; h++) {
-            const status = getSlotStatus(bookings, selectedCourtId, selectedDate, h)
-            if (status !== 'available') {
-              toast.error('Selected range includes an unavailable slot')
-              return
-            }
-          }
-        }
-        setSelectedEndHour(hour)
-      } else {
-        // Third click: reset
-        setSelectedStartHour(hour)
-        setSelectedEndHour(null)
-      }
-    },
-    [selectedStartHour, selectedEndHour, selectedCourtId, bookings, selectedDate],
-  )
+  const handleClearTime = useCallback(() => {
+    setSelectedStartHour(null)
+    setSelectedEndHour(null)
+  }, [])
 
   // ── Gantt slot click ───────────────────────────────────────────────────────
   const handleGanttSlotClick = useCallback(
     (courtId: string, hour: number) => {
-      if (courtId !== selectedCourtId) {
-        setSelectedCourtId(courtId)
-        setSelectedStartHour(hour)
-        setSelectedEndHour(null)
-      } else {
-        handleHourClick(hour)
-      }
+      setSelectedCourtId(courtId)
+      handleSelectRange(hour, Math.min(24, hour + 1))
     },
-    [selectedCourtId, handleHourClick],
+    [handleSelectRange],
   )
 
   // ── Draft computation ──────────────────────────────────────────────────────
-  const selectedCourt = courts.find((c) => c.id === selectedCourtId) ?? null
+  const selectedCourt = courts.find((c) => c.id === selectedCourtId) ?? courts[0] ?? null
   const draft: BookingDraft | null =
     selectedCourtId && selectedStartHour !== null && selectedEndHour !== null && selectedCourt
       ? {
@@ -182,6 +195,11 @@ export default function BookPage() {
       })
 
       if (!result.success) {
+        if (result.error === 'Authentication required') {
+          toast.error('Please sign in to complete your reservation')
+          router.push(`/auth/login?redirectTo=${encodeURIComponent('/book')}`)
+          return
+        }
         toast.error(result.error ?? 'Booking failed')
         return
       }
@@ -207,12 +225,12 @@ export default function BookPage() {
     } finally {
       setIsBooking(false)
     }
-  }, [draft, notes, selectedDate, selectedCourt, supabase])
+  }, [draft, notes, selectedDate, selectedCourt, supabase, router])
 
   // ── Success overlay close ──────────────────────────────────────────────────
   const handleCloseSuccess = useCallback(() => {
     setBookingSuccess(null)
-    setSelectedCourtId(null)
+    setSelectedCourtId(FALLBACK_COURTS[0].id)
     setSelectedStartHour(null)
     setSelectedEndHour(null)
   }, [])
@@ -220,143 +238,177 @@ export default function BookPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <main
-      className="min-h-screen"
-      style={{ background: '#0d0d0d', fontFamily: 'Inter, sans-serif' }}
+      className="min-h-screen pt-20 sm:pt-24 bg-[var(--apple-bg)] text-[var(--apple-text)] flex flex-col justify-between transition-colors"
+      style={{ fontFamily: 'Inter, sans-serif' }}
     >
-      {/* ── Page header ── */}
-      <div className="border-b border-white/10 px-6 py-5 flex items-center justify-between">
-        <div>
-          <h1
-            className="text-2xl font-bold tracking-tight text-white"
-            style={{ fontFamily: 'Syne, sans-serif' }}
-          >
-            Book a Court
-          </h1>
-          <p className="text-white/40 text-sm mt-0.5">
-            Select a date, court, and time to reserve your session
-          </p>
+      <div>
+        {/* ── Page Header ── */}
+        <div className="border-b border-[var(--apple-border)] px-4 sm:px-6 lg:px-8 py-5">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1
+                className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--apple-text)]"
+                style={{ fontFamily: 'Syne, sans-serif' }}
+              >
+                Book a Court
+              </h1>
+              <p className="text-[var(--apple-subtext)] text-xs sm:text-sm mt-1">
+                Open 24/7 · 4 Championship Courts · Rates in Philippine Peso (PHP ₱)
+              </p>
+            </div>
+
+            {/* View toggle */}
+            <ViewToggle viewMode={viewMode} onChange={setViewMode} />
+          </div>
         </div>
 
-        {/* View toggle */}
-        <ViewToggle viewMode={viewMode} onChange={setViewMode} />
-      </div>
+        {/* ── Date Strip (Horizontal scroll on mobile) ── */}
+        <DateStrip
+          dates={dateOptions}
+          selectedDate={selectedDate}
+          onSelect={(d) => {
+            setSelectedDate(d)
+            setSelectedStartHour(null)
+            setSelectedEndHour(null)
+          }}
+        />
 
-      {/* ── Date Strip ── */}
-      <DateStrip
-        dates={dateOptions}
-        selectedDate={selectedDate}
-        onSelect={setSelectedDate}
-      />
+        {/* ── Main Responsive Grid ── */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
 
-      {/* ── Main content ── */}
-      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-180px)]">
-        {/* Left Panel — 60% */}
-        <div className="flex-[3] border-r border-white/10 p-6 space-y-6">
-          {loadingCourts ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="w-6 h-6 animate-spin text-[#39ff14]" />
-            </div>
-          ) : courts.length === 0 ? (
-            <EmptyState message="No courts available right now." />
-          ) : viewMode === 'map' ? (
-            <>
-              {/* Court Map Picker */}
-              <CourtMapPicker
-                courts={courts}
-                bookings={bookings}
-                selectedDate={selectedDate}
-                selectedCourtId={selectedCourtId}
-                onSelectCourt={(id) => {
-                  setSelectedCourtId(id)
-                  setSelectedStartHour(null)
-                  setSelectedEndHour(null)
-                }}
-              />
+            {/* ── Left Column (lg:col-span-8, min-w-0 for guaranteed zero-overflow) ── */}
+            <div className="lg:col-span-8 min-w-0 w-full space-y-7">
+              {loadingCourts ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#39ff14]" />
+                </div>
+              ) : courts.length === 0 ? (
+                <EmptyState message="No courts available right now." />
+              ) : viewMode === 'map' ? (
+                <>
+                  {/* 1. Tactile Court Selection Cards (100% Touch & Clickable) */}
+                  <CourtSelectorCards
+                    courts={courts}
+                    selectedCourtId={selectedCourtId}
+                    onSelectCourt={(id) => {
+                      setSelectedCourtId(id)
+                      setSelectedStartHour(null)
+                      setSelectedEndHour(null)
+                    }}
+                    bookings={bookings}
+                    selectedDate={selectedDate}
+                  />
 
-              {/* Per-court timeline (shown when a court is selected) */}
-              <AnimatePresence>
-                {selectedCourt && (
-                  <motion.div
-                    key={selectedCourt.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 16 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ background: selectedCourt.color_hex }}
-                      />
-                      <h3 className="text-sm font-semibold text-white/70">
-                        {selectedCourt.name} — Time Selection
-                      </h3>
-                    </div>
-                    <BookingTimeline
-                      court={selectedCourt}
-                      bookings={bookings.filter((b) => b.court_id === selectedCourt.id)}
+                  {/* 2. Visual 2D Court Map */}
+                  <div className="space-y-2">
+                    <CourtMapPicker
+                      courts={courts}
+                      bookings={bookings}
                       selectedDate={selectedDate}
-                      selectedStartHour={selectedStartHour}
-                      selectedEndHour={selectedEndHour}
-                      onSlotClick={handleHourClick}
+                      selectedCourtId={selectedCourtId}
+                      onSelectCourt={(id) => {
+                        setSelectedCourtId(id)
+                        setSelectedStartHour(null)
+                        setSelectedEndHour(null)
+                      }}
                     />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          ) : (
-            /* Gantt / Timeline view */
-            <MultiCourtGantt
-              courts={courts}
-              bookings={bookings}
-              selectedDate={selectedDate}
-              onSlotClick={handleGanttSlotClick}
-              isAdmin={false}
+                  </div>
+
+                  {/* 3. Friendly 24-Hour Time Slot Picker (8-9, 9-10, 10-11, etc.) */}
+                  {selectedCourt && (
+                    <motion.div
+                      key={selectedCourt.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-5 sm:p-6 rounded-3xl border border-[var(--apple-border)] bg-[var(--apple-card)] shadow-sm"
+                    >
+                      <TimeSlotPicker
+                        court={selectedCourt}
+                        bookings={bookings}
+                        selectedDate={selectedDate}
+                        selectedStartHour={selectedStartHour}
+                        selectedEndHour={selectedEndHour}
+                        onSelectRange={handleSelectRange}
+                        onClear={handleClearTime}
+                      />
+                    </motion.div>
+                  )}
+                </>
+              ) : (
+                /* 4. Gantt Timeline View with strict min-w-0 */
+                <div className="space-y-4">
+                  {/* Court quick tabs in timeline view */}
+                  <CourtSelectorCards
+                    courts={courts}
+                    selectedCourtId={selectedCourtId}
+                    onSelectCourt={(id) => {
+                      setSelectedCourtId(id)
+                      setSelectedStartHour(null)
+                      setSelectedEndHour(null)
+                    }}
+                    bookings={bookings}
+                    selectedDate={selectedDate}
+                  />
+
+                  <MultiCourtGantt
+                    courts={courts}
+                    bookings={bookings}
+                    selectedDate={selectedDate}
+                    onSlotClick={handleGanttSlotClick}
+                    isAdmin={false}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* ── Right Column (lg:col-span-4, min-w-0, Sticky Booking Summary) ── */}
+            <div className="lg:col-span-4 min-w-0 w-full">
+              <div className="sticky top-24">
+                <BookingSummaryPanel
+                  draft={draft}
+                  court={selectedCourt}
+                  notes={notes}
+                  onNotesChange={setNotes}
+                  onConfirm={handleConfirmBooking}
+                  isBooking={isBooking}
+                  selectedStartHour={selectedStartHour}
+                  selectedEndHour={selectedEndHour}
+                  hasCourtSelected={!!selectedCourtId}
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Floating Reservation Dock (Bottom Bar for Quick Mobile Reservation) */}
+        <AnimatePresence>
+          {draft && (
+            <ReservationDock
+              draft={draft}
+              onConfirm={handleConfirmBooking}
+              onClear={handleClearTime}
+              isLoading={isBooking}
             />
           )}
-        </div>
+        </AnimatePresence>
 
-        {/* Right Panel — 40%: Booking Summary */}
-        <div className="flex-[2] p-6 space-y-6">
-          <BookingSummaryPanel
-            draft={draft}
-            court={selectedCourt}
-            notes={notes}
-            onNotesChange={setNotes}
-            onConfirm={handleConfirmBooking}
-            isBooking={isBooking}
-            selectedStartHour={selectedStartHour}
-            selectedEndHour={selectedEndHour}
-            hasCourtSelected={!!selectedCourtId}
-          />
-        </div>
+        {/* Success Confetti & Ticket Modal */}
+        <AnimatePresence>
+          {bookingSuccess && (
+            <BookingSuccessOverlay
+              booking={bookingSuccess.booking}
+              court={bookingSuccess.court}
+              onClose={handleCloseSuccess}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Reservation Dock — slides up when draft exists */}
-      <AnimatePresence>
-        {draft && (
-          <ReservationDock
-            draft={draft}
-            onConfirm={handleConfirmBooking}
-            onClear={() => {
-              setSelectedStartHour(null)
-              setSelectedEndHour(null)
-            }}
-            isLoading={isBooking}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Success Overlay */}
-      <AnimatePresence>
-        {bookingSuccess && (
-          <BookingSuccessOverlay
-            booking={bookingSuccess.booking}
-            court={bookingSuccess.court}
-            onClose={handleCloseSuccess}
-          />
-        )}
-      </AnimatePresence>
+      {/* Global Footer with Discrete Staff Access */}
+      <Footer />
     </main>
   )
 }
@@ -374,8 +426,8 @@ function DateStrip({
   onSelect: (date: string) => void
 }) {
   return (
-    <div className="border-b border-white/10 px-6 py-3">
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+    <div className="border-b border-[var(--apple-border)] px-4 sm:px-6 lg:px-8 py-3 bg-[var(--apple-bg)] transition-colors">
+      <div className="max-w-7xl mx-auto flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {dates.map((date) => {
           const dateStr = format(date, 'yyyy-MM-dd')
           const isSelected = dateStr === selectedDate
@@ -384,22 +436,22 @@ function DateStrip({
           return (
             <motion.button
               key={dateStr}
+              type="button"
               onClick={() => onSelect(dateStr)}
               className={cn(
-                'flex-shrink-0 flex flex-col items-center px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border',
+                'flex-shrink-0 flex flex-col items-center px-3.5 py-2.5 rounded-2xl text-xs font-medium transition-all border cursor-pointer min-w-[62px]',
                 isSelected
-                  ? 'border-transparent text-[#0d0d0d]'
-                  : 'border-white/10 text-white/50 hover:border-white/30 hover:text-white',
+                  ? 'bg-neutral-900 text-white dark:bg-white dark:text-black border-black dark:border-white shadow-sm font-semibold'
+                  : 'border-[var(--apple-border)] text-[var(--apple-subtext)] hover:text-[var(--apple-text)] bg-[var(--apple-card)] hover:bg-[var(--apple-card-hover)] shadow-sm',
               )}
-              style={isSelected ? { background: '#39ff14' } : {}}
-              whileHover={{ scale: 1.04 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
             >
-              <span className="text-[10px] uppercase tracking-wider opacity-70">
+              <span className={cn('text-[10px] uppercase tracking-wider', isSelected ? 'opacity-90 font-bold' : 'opacity-60')}>
                 {today ? 'Today' : format(date, 'EEE')}
               </span>
-              <span className="text-base font-bold leading-tight">{format(date, 'd')}</span>
-              <span className="text-[10px] opacity-70">{format(date, 'MMM')}</span>
+              <span className="text-base font-bold leading-tight mt-0.5">{format(date, 'd')}</span>
+              <span className={cn('text-[10px]', isSelected ? 'opacity-90 font-medium' : 'opacity-60')}>{format(date, 'MMM')}</span>
             </motion.button>
           )
         })}
@@ -408,7 +460,7 @@ function DateStrip({
   )
 }
 
-// View Toggle
+// View Toggle - Apple Segmented Control
 function ViewToggle({
   viewMode,
   onChange,
@@ -418,32 +470,32 @@ function ViewToggle({
 }) {
   return (
     <div
-      className="flex items-center gap-1 p-1 rounded-xl border border-white/10"
-      style={{ background: '#1a1a1a' }}
+      className="flex items-center p-1 rounded-full border border-[var(--apple-border)] bg-black/[0.04] dark:bg-white/[0.04] self-start sm:self-auto"
     >
       {(['map', 'timeline'] as const).map((mode) => {
         const isActive = viewMode === mode
         return (
-          <motion.button
+          <button
             key={mode}
+            type="button"
             onClick={() => onChange(mode)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
-              isActive ? 'text-[#0d0d0d]' : 'text-white/40 hover:text-white/70',
+              'flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer',
+              isActive
+                ? 'bg-white dark:bg-white/10 text-black dark:text-white font-semibold shadow-sm'
+                : 'text-[var(--apple-subtext)] hover:text-[var(--apple-text)]',
             )}
-            style={isActive ? { background: '#39ff14' } : {}}
-            whileTap={{ scale: 0.95 }}
           >
-            {mode === 'map' ? <Map size={13} /> : <AlignLeft size={13} />}
-            {mode === 'map' ? 'Court Map' : 'Timeline'}
-          </motion.button>
+            {mode === 'map' ? <Map size={12} /> : <AlignLeft size={12} />}
+            <span>{mode === 'map' ? 'Court Map' : '24h Timeline'}</span>
+          </button>
         )
       })}
     </div>
   )
 }
 
-// Booking Summary Panel
+// Booking Summary Panel - Apple Card Pass
 interface BookingSummaryPanelProps {
   draft: BookingDraft | null
   court: Court | null
@@ -468,78 +520,74 @@ function BookingSummaryPanel({
   hasCourtSelected,
 }: BookingSummaryPanelProps) {
   return (
-    <div className="sticky top-6 space-y-4">
-      <h2
-        className="text-lg font-bold text-white tracking-tight"
-        style={{ fontFamily: 'Syne, sans-serif' }}
-      >
-        Booking Summary
-      </h2>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-[var(--apple-text)] tracking-tight">
+          Booking Summary
+        </h2>
+        <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-[var(--apple-subtext)] border border-[var(--apple-border)]">
+          Philippine Peso (₱)
+        </span>
+      </div>
 
       {!hasCourtSelected && (
-        <StepHint step={1} text="Select a court from the map" />
+        <StepHint step={1} text="Choose Court 1, 2, 3, or 4" />
       )}
       {hasCourtSelected && selectedStartHour === null && (
-        <StepHint step={2} text="Click a time slot to set your start time" />
-      )}
-      {hasCourtSelected && selectedStartHour !== null && selectedEndHour === null && (
-        <StepHint
-          step={3}
-          text={`Start: ${formatHour(selectedStartHour)} — now click an end time`}
-          accent
-        />
+        <StepHint step={2} text="Tap a 24-hour time slot (e.g. 8:00 AM – 9:00 AM)" />
       )}
 
       <AnimatePresence mode="wait">
         {draft && court ? (
           <motion.div
             key="draft"
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
             {/* Court card */}
-            <div
-              className="rounded-2xl p-5 border border-white/10 space-y-3"
-              style={{ background: '#111' }}
-            >
+            <div className="rounded-3xl p-5 sm:p-6 border border-[var(--apple-border)] bg-[var(--apple-card)] space-y-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div
                   className="w-3 h-10 rounded-full"
                   style={{ background: court.color_hex }}
                 />
                 <div>
-                  <p className="text-white font-semibold">{court.name}</p>
-                  <p className="text-white/40 text-xs">
+                  <p className="text-[var(--apple-text)] font-semibold text-base">{court.name}</p>
+                  <p className="text-[var(--apple-subtext)] text-xs">
                     {court.surface_type} · {court.is_indoor ? 'Indoor' : 'Outdoor'} ·{' '}
                     {formatCurrency(court.hourly_rate)}/hr
                   </p>
                 </div>
               </div>
 
-              <div className="h-px bg-white/10" />
+              <div className="h-px bg-[var(--apple-border)]" />
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2.5 text-sm">
                 <SummaryRow label="Date" value={format(parseISO(draft.date), 'EEE, MMM d, yyyy')} />
                 <SummaryRow
-                  label="Time"
+                  label="Time Slot"
                   value={`${formatHour(draft.startHour)} – ${formatHour(draft.endHour)}`}
                 />
                 <SummaryRow
                   label="Duration"
                   value={`${draft.endHour - draft.startHour} hour${draft.endHour - draft.startHour > 1 ? 's' : ''}`}
                 />
+                <SummaryRow
+                  label="Rate"
+                  value={`${formatCurrency(court.hourly_rate)} / hr`}
+                />
               </div>
 
-              <div className="h-px bg-white/10" />
+              <div className="h-px bg-[var(--apple-border)]" />
 
-              <div className="flex items-center justify-between">
-                <span className="text-white/50 text-sm">Total</span>
-                <span
-                  className="text-2xl font-bold"
-                  style={{ fontFamily: 'Syne, sans-serif', color: '#39ff14' }}
-                >
+              <div className="flex items-center justify-between pt-1">
+                <div>
+                  <span className="text-[var(--apple-subtext)] text-xs block">Total Amount</span>
+                  <span className="text-[10px] text-[var(--apple-muted)]">Tax & Lighting included</span>
+                </div>
+                <span className="text-2xl font-bold text-[var(--apple-text)] tabular-nums tracking-tight">
                   {formatCurrency(draft.totalPrice)}
                 </span>
               </div>
@@ -547,37 +595,34 @@ function BookingSummaryPanel({
 
             {/* Notes input */}
             <div>
-              <label className="block text-xs text-white/40 mb-1.5 font-medium tracking-wide uppercase">
-                Notes (optional)
+              <label className="block text-xs text-[var(--apple-subtext)] mb-1.5 font-medium">
+                Special Requests / Notes (optional)
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => onNotesChange(e.target.value)}
-                placeholder="Any special requests..."
-                rows={3}
-                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 border border-white/10 outline-none focus:border-[#39ff14]/50 resize-none transition-colors"
-                style={{ background: '#111' }}
+                placeholder="Racket rental, extra balls, coach accompaniment..."
+                rows={2}
+                className="w-full rounded-2xl px-4 py-3 text-sm text-[var(--apple-text)] placeholder-[var(--apple-muted)] border border-[var(--apple-border)] bg-[var(--apple-card)] outline-none focus:border-black/30 dark:focus:border-white/30 resize-none transition-colors"
               />
             </div>
 
-            {/* Confirm button */}
-            <motion.button
+            {/* Confirm button - Apple clean pill */}
+            <button
+              type="button"
               onClick={onConfirm}
               disabled={isBooking}
-              className="w-full py-4 rounded-xl font-bold text-sm tracking-wide flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-              style={{ background: '#39ff14', color: '#0d0d0d' }}
-              whileHover={{ scale: 1.01, boxShadow: '0 0 24px rgba(57,255,20,0.4)' }}
-              whileTap={{ scale: 0.99 }}
+              className="btn-primary w-full !py-3.5 text-sm tracking-normal flex items-center justify-center gap-2 shadow-sm"
             >
               {isBooking ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  Confirming…
+                  <span>Confirming Reservation…</span>
                 </>
               ) : (
-                'Confirm Booking'
+                <span>Confirm Reservation · {formatCurrency(draft.totalPrice)}</span>
               )}
-            </motion.button>
+            </button>
           </motion.div>
         ) : (
           <motion.div
@@ -586,19 +631,18 @@ function BookingSummaryPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* Placeholder skeleton */}
+            {/* Placeholder state */}
             <div
-              className="rounded-2xl border border-dashed border-white/10 p-8 flex flex-col items-center justify-center gap-3 text-center"
+              className="rounded-3xl border border-dashed border-[var(--apple-border)] p-8 flex flex-col items-center justify-center gap-3 text-center bg-[var(--apple-card)]/40"
               style={{ minHeight: 220 }}
             >
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                style={{ background: '#1a1a1a' }}
+                className="w-12 h-12 rounded-2xl flex items-center justify-center bg-black/[0.04] dark:bg-white/[0.05]"
               >
-                <ChevronLeft size={20} className="text-white/20" />
+                <ChevronLeft size={20} className="text-[var(--apple-muted)]" />
               </div>
-              <p className="text-white/30 text-sm max-w-[180px]">
-                Your booking details will appear here once you&apos;ve made a selection.
+              <p className="text-[var(--apple-subtext)] text-xs sm:text-sm max-w-[200px]">
+                Your booking details will appear here once you select a court and time slot.
               </p>
             </div>
           </motion.div>
@@ -611,8 +655,8 @@ function BookingSummaryPanel({
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-white/40">{label}</span>
-      <span className="text-white font-medium">{value}</span>
+      <span className="text-[var(--apple-subtext)] text-xs">{label}</span>
+      <span className="text-[var(--apple-text)] font-semibold text-xs sm:text-sm">{value}</span>
     </div>
   )
 }
@@ -622,15 +666,16 @@ function StepHint({ step, text, accent }: { step: number; text: string; accent?:
     <motion.div
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
-      className="flex items-center gap-3 text-sm"
+      className="flex items-center gap-3 text-xs sm:text-sm p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] shadow-sm"
     >
       <div
-        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-        style={{ background: accent ? '#39ff14' : '#1a1a1a', color: accent ? '#0d0d0d' : '#fff' }}
+        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
+          accent ? 'bg-[#30d158] text-black' : 'bg-black/[0.05] dark:bg-white/10 text-[var(--apple-text)]'
+        }`}
       >
         {step}
       </div>
-      <span style={{ color: accent ? '#39ff14' : 'rgba(255,255,255,0.4)' }}>{text}</span>
+      <span className={accent ? 'text-[#30d158] font-medium' : 'text-[var(--apple-subtext)]'}>{text}</span>
     </motion.div>
   )
 }
@@ -638,8 +683,8 @@ function StepHint({ step, text, accent }: { step: number; text: string; accent?:
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-48 gap-3 text-center">
-      <AlertCircle size={32} className="text-white/20" />
-      <p className="text-white/40 text-sm">{message}</p>
+      <AlertCircle size={32} className="text-[var(--apple-muted)]" />
+      <p className="text-[var(--apple-subtext)] text-sm">{message}</p>
     </div>
   )
 }

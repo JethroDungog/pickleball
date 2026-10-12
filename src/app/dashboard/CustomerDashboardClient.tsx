@@ -7,7 +7,7 @@ import { format, parseISO, isAfter } from 'date-fns'
 import {
   CalendarDays,
   TrendingUp,
-  DollarSign,
+  CreditCard,
   Clock,
   PlusCircle,
   ChevronRight,
@@ -18,6 +18,7 @@ import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency, formatDate, formatHour } from '@/lib/utils'
 import BookingCard from '@/components/BookingCard'
+import Footer from '@/components/Footer'
 import type { Booking, Court, Profile } from '@/types'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -60,13 +61,11 @@ function StatCard({
         <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">{label}</p>
         <p className={`font-display font-bold text-2xl mt-1 ${accent ?? 'text-white'}`}>{value}</p>
       </div>
-      {/* subtle glow line */}
+      {/* Solid accent line */}
       <div
-        className="absolute bottom-0 left-0 h-0.5 w-1/2 rounded-full"
+        className="absolute bottom-0 left-0 h-0.5 w-12 rounded-full"
         style={{
-          background: accent
-            ? `linear-gradient(to right, ${accent === 'text-neon-green' ? '#39ff14' : '#00f5ff'}, transparent)`
-            : 'linear-gradient(to right, #242424, transparent)',
+          backgroundColor: accent === 'text-neon-green' ? '#39ff14' : accent ? '#00f5ff' : '#242424',
         }}
       />
     </motion.div>
@@ -133,16 +132,7 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
 
   return (
     <div className="min-h-screen bg-court-dark text-slate-100">
-      {/* Background grid */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-30"
-        style={{
-          backgroundImage: 'radial-gradient(circle, #ffffff06 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }}
-      />
-
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-10">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-16 space-y-10">
         {/* ── Header ── */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
@@ -196,7 +186,7 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
           />
           <StatCard
             index={2}
-            icon={DollarSign}
+            icon={CreditCard}
             label="Total Spent"
             value={formatCurrency(totalSpent)}
           />
@@ -311,20 +301,9 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
           </section>
         )}
 
-        {/* ── Footer nav ── */}
-        <motion.footer
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="flex items-center justify-between text-xs text-slate-600 pt-4 border-t border-court-border"
-        >
-          <span>PickCourt · {new Date().getFullYear()}</span>
-          <div className="flex items-center gap-4">
-            <Link href="/terms" className="hover:text-slate-400 transition-colors">Terms</Link>
-            <Link href="/privacy" className="hover:text-slate-400 transition-colors">Privacy</Link>
-          </div>
-        </motion.footer>
       </div>
+
+      <Footer />
     </div>
   )
 }

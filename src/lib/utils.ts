@@ -14,16 +14,11 @@ export function cn(...inputs: ClassValue[]): string {
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
 /**
- * Formats a number as USD currency.
- * @example formatCurrency(25) → '$25.00'
+ * Formats a number as Philippine Peso (PHP) currency with ₱ symbol.
+ * @example formatCurrency(400) → '₱400'
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
+  return `₱${Math.round(amount).toLocaleString('en-US')}`
 }
 
 /**

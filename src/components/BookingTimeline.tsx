@@ -347,8 +347,7 @@ export default function BookingTimeline({
                 style={{
                   marginLeft: `${(Math.min(selectedStartHour, selectedEndHour) - FIRST_HOUR) * 68}px`,
                   width: `${Math.abs(selectedEndHour - selectedStartHour) * 68 - 4}px`,
-                  background: `linear-gradient(90deg, ${court.color_hex}, #39ff14)`,
-                  boxShadow: `0 0 8px #39ff1480`,
+                  backgroundColor: court.color_hex,
                   transformOrigin: 'left',
                 }}
               />

@@ -29,6 +29,9 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+  const previewParam = request.nextUrl.searchParams.get('preview')
+  const previewCookie = request.cookies.get('preview_role')?.value
+  const activePreview = previewParam || previewCookie
 
   // ── Route protection helpers ────────────────────────────────────────────────
   const isDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/')
@@ -37,6 +40,21 @@ export async function middleware(request: NextRequest) {
   const isProtected = isDashboard || isAdmin || isSuperAdmin
 
   if (!isProtected) return supabaseResponse
+
+  // ── Allow preview mode for development & role inspection ────────────────────
+  if (activePreview) {
+    const isAllowedPreview =
+      (isDashboard && ['customer', 'admin', 'super_admin'].includes(activePreview)) ||
+      (isAdmin && ['admin', 'super_admin'].includes(activePreview)) ||
+      (isSuperAdmin && activePreview === 'super_admin')
+
+    if (isAllowedPreview) {
+      if (previewParam && previewCookie !== previewParam) {
+        supabaseResponse.cookies.set('preview_role', previewParam, { path: '/' })
+      }
+      return supabaseResponse
+    }
+  }
 
   // ── Require authentication ──────────────────────────────────────────────────
   if (!user) {

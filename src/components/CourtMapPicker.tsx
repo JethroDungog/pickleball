@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import type { Court, Booking } from '@/types'
 
 interface CourtMapPickerProps {
@@ -14,7 +14,7 @@ interface CourtMapPickerProps {
   mode?: 'picker' | 'preview'
 }
 
-const HOURS_IN_DAY = 16 // 6 AM – 10 PM
+const HOURS_IN_DAY = 24 // 24/7 facility
 const COURT_POSITIONS: Record<number, { col: number; row: number }> = {
   0: { col: 0, row: 0 },
   1: { col: 1, row: 0 },
@@ -24,13 +24,13 @@ const COURT_POSITIONS: Record<number, { col: number; row: number }> = {
 
 // SVG layout constants (in SVG units)
 const VIEWBOX_W = 800
-const VIEWBOX_H = 520
+const VIEWBOX_H = 540
 const COURT_W = 310
 const COURT_H = 190
 const GAP_X = 40
-const GAP_Y = 40
-const OFFSET_X = 45
-const OFFSET_Y = 50
+const GAP_Y = 44
+const OFFSET_X = 70
+const OFFSET_Y = 56
 
 // Pickleball court line proportions (44ft x 20ft → ratio 2.2:1)
 // Kitchen line: 7ft from net → 7/22 = ~31.8% from center each side
@@ -167,42 +167,45 @@ function CourtShape({
       <line x1={leftKitchenX} y1={cy} x2={x} y2={cy} stroke={color} strokeWidth={0.8} opacity={0.6} />
       <line x1={x + w} y1={cy} x2={rightKitchenX} y2={cy} stroke={color} strokeWidth={0.8} opacity={0.6} />
 
-      {/* Availability status dot */}
-      <circle
-        cx={x + w - 16}
-        cy={y + 14}
-        r={5}
-        fill={glowColor}
-        style={{ filter: `drop-shadow(0 0 4px ${glowColor})` }}
-      />
+      {/* Availability status pill badge (top-right of court) */}
+      <g transform={`translate(${x + w - 74}, ${y + 8})`}>
+        <rect
+          x="0"
+          y="0"
+          width="66"
+          height="18"
+          rx="9"
+          fill="#0a0a0ae6"
+          stroke={glowColor}
+          strokeWidth="1"
+        />
+        <circle cx="10" cy="9" r="3.5" fill={glowColor} />
+        <text
+          x="36"
+          y="12.5"
+          textAnchor="middle"
+          fill={glowColor}
+          fontSize="9"
+          fontWeight="700"
+          fontFamily="system-ui, sans-serif"
+        >
+          {availability.free}/{availability.total}h
+        </text>
+      </g>
 
       {/* Court label */}
       <text
         x={cx}
-        y={y - 10}
+        y={y - 12}
         textAnchor="middle"
         fill={color}
-        fontSize={11}
-        fontWeight={700}
-        letterSpacing={2}
+        fontSize={12}
+        fontWeight={800}
+        letterSpacing={3}
         fontFamily="system-ui, sans-serif"
-        style={{ filter: `drop-shadow(0 0 4px ${color})` }}
+        style={{ filter: `drop-shadow(0 0 6px ${color})` }}
       >
         {label}
-      </text>
-
-      {/* Availability label */}
-      <text
-        x={x + w - 26}
-        y={y + 16}
-        textAnchor="middle"
-        fill={glowColor}
-        fontSize={8}
-        fontWeight={600}
-        fontFamily="system-ui, sans-serif"
-        opacity={0.9}
-      >
-        {availability.free}/{availability.total}h
       </text>
 
       {/* Selected check mark */}
@@ -213,6 +216,26 @@ function CourtShape({
             ✓
           </text>
         </g>
+      )}
+
+      {/* Explicit click & touch hit area covering entire court box */}
+      {mode === 'picker' && (
+        <rect
+          x={x}
+          y={y}
+          width={w}
+          height={h}
+          fill="transparent"
+          style={{ cursor: 'pointer', pointerEvents: 'all' }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onClick()
+          }}
+          onTouchEnd={(e) => {
+            e.stopPropagation()
+            onClick()
+          }}
+        />
       )}
     </motion.g>
   )
@@ -271,22 +294,11 @@ export default function CourtMapPicker({
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden border border-white/10 bg-[#080f08]">
-      {/* Background grid */}
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage:
-            'linear-gradient(#39ff1408 1px, transparent 1px), linear-gradient(90deg, #39ff1408 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-
       {/* Mode label */}
       <div className="absolute top-3 left-4 flex items-center gap-2 z-10">
-        <span className="text-[10px] font-bold tracking-[3px] text-neon-green/60 uppercase">
+        <span className="text-[10px] font-bold tracking-[3px] text-neon-green/70 uppercase">
           {mode === 'preview' ? 'Facility Overview' : 'Select Court'}
         </span>
-        <span className="w-1.5 h-1.5 rounded-full bg-neon-green animate-pulse" />
       </div>
 
       {/* SVG map */}
@@ -313,17 +325,17 @@ export default function CourtMapPicker({
           x1={VIEWBOX_W / 2}
           y1={OFFSET_Y - 20}
           x2={VIEWBOX_W / 2}
-          y2={VIEWBOX_H - OFFSET_Y + 20}
-          stroke="#ffffff08"
+          y2={VIEWBOX_H - 35}
+          stroke="#ffffff12"
           strokeWidth={1}
           strokeDasharray="6,6"
         />
 
         {/* Bench indicators */}
-        <Bench x={22} y={OFFSET_Y + COURT_H / 2} angle={90} />
-        <Bench x={22} y={OFFSET_Y + COURT_H + GAP_Y + COURT_H / 2} angle={90} />
-        <Bench x={VIEWBOX_W - 22} y={OFFSET_Y + COURT_H / 2} angle={90} />
-        <Bench x={VIEWBOX_W - 22} y={OFFSET_Y + COURT_H + GAP_Y + COURT_H / 2} angle={90} />
+        <Bench x={38} y={OFFSET_Y + COURT_H / 2} angle={90} />
+        <Bench x={38} y={OFFSET_Y + COURT_H + GAP_Y + COURT_H / 2} angle={90} />
+        <Bench x={VIEWBOX_W - 38} y={OFFSET_Y + COURT_H / 2} angle={90} />
+        <Bench x={VIEWBOX_W - 38} y={OFFSET_Y + COURT_H + GAP_Y + COURT_H / 2} angle={90} />
 
         {/* Courts */}
         {courtsToRender.map((court, index) => {
@@ -395,8 +407,8 @@ export default function CourtMapPicker({
                 </p>
                 <p className="text-[10px] text-white/50">
                   {tooltipCourt.surface_type} ·{' '}
-                  {tooltipCourt.is_indoor ? 'Indoor' : 'Outdoor'} · $
-                  {tooltipCourt.hourly_rate}/hr
+                  {tooltipCourt.is_indoor ? 'Indoor' : 'Outdoor'} ·{' '}
+                  {formatCurrency(tooltipCourt.hourly_rate)}/hr
                 </p>
               </div>
               <div className="text-right">

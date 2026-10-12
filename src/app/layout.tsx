@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Syne, Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import Navbar from '@/components/Navbar'
+import { ThemeProvider } from '@/context/ThemeContext'
 import './globals.css'
 
 // ── Fonts ─────────────────────────────────────────────────────────────────────
@@ -35,7 +36,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0d0d0d',
 }
 
 // ── Layout ────────────────────────────────────────────────────────────────────
@@ -43,12 +43,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`dark ${displayFont.variable} ${bodyFont.variable}`}
+      className={`${displayFont.variable} ${bodyFont.variable}`}
       suppressHydrationWarning
     >
-      <body className="font-body bg-court-dark text-slate-100 antialiased min-h-screen">
-        <Navbar />
-        {children}
+      <body className="font-body antialiased min-h-screen">
+        <ThemeProvider>
+          <Navbar />
+          {children}
         <Toaster
           position="top-right"
           toastOptions={{
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },
           }}
         />
+        </ThemeProvider>
       </body>
     </html>
   )

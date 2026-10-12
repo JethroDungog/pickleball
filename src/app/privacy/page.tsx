@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-court-dark text-slate-200 py-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-court-dark text-slate-200 pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Back navigation */}
         <Link

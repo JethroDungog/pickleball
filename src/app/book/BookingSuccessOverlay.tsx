@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { useRouter } from 'next/navigation'
-import { X, Calendar, Clock, DollarSign, MapPin } from 'lucide-react'
+import { X, Calendar, Clock, CreditCard, MapPin } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { formatHour, formatCurrency } from '@/lib/utils'
 import type { Booking, Court } from '@/types'
@@ -202,7 +202,7 @@ export default function BookingSuccessOverlay({
                   value={court.name}
                 />
                 <DetailRow
-                  icon={<DollarSign size={15} className="text-[#39ff14]" />}
+                  icon={<CreditCard size={15} className="text-[#39ff14]" />}
                   label="Total Paid"
                   value={
                     <span className="text-[#39ff14] font-bold text-lg">
