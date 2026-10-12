@@ -123,25 +123,38 @@ export default function BookPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ── Fetch bookings when date changes ───────────────────────────────────────
+  // ── Fetch bookings when date changes (synced across all accounts) ────────
   useEffect(() => {
+    let isCancelled = false
+
     async function fetchBookings() {
       setLoadingBookings(true)
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*, court:courts(*), profile:profiles(full_name, avatar_url)')
-        .eq('booking_date', selectedDate)
-        .neq('status', 'cancelled')
-
-      if (error) {
-        console.error('[BookPage] fetchBookings:', error)
-      } else {
-        setBookings((data ?? []) as Booking[])
+      try {
+        const res = await fetch(`/api/bookings?date=${encodeURIComponent(selectedDate)}`, {
+          cache: 'no-store',
+        })
+        if (res.ok) {
+          const json = await res.json()
+          if (!isCancelled && json.bookings) {
+            setBookings(json.bookings as Booking[])
+          }
+        }
+      } catch (err) {
+        console.error('[BookPage] fetchBookings error:', err)
+      } finally {
+        if (!isCancelled) setLoadingBookings(false)
       }
-      setLoadingBookings(false)
     }
+
     fetchBookings()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Real-time synchronization polling every 8s across all devices & accounts
+    const interval = setInterval(fetchBookings, 8000)
+
+    return () => {
+      isCancelled = true
+      clearInterval(interval)
+    }
   }, [selectedDate])
 
   // ── Select time range handler ──────────────────────────────────────────────
@@ -209,14 +222,15 @@ export default function BookPage() {
         return
       }
 
-      // Re-fetch bookings to reflect new state
+      // Re-fetch bookings across all accounts immediately
       try {
-        const { data } = await supabase
-          .from('bookings')
-          .select('*, court:courts(*), profile:profiles(full_name, avatar_url)')
-          .eq('booking_date', selectedDate)
-          .neq('status', 'cancelled')
-        if (data) setBookings(data as Booking[])
+        const res = await fetch(`/api/bookings?date=${encodeURIComponent(selectedDate)}`, {
+          cache: 'no-store',
+        })
+        if (res.ok) {
+          const json = await res.json()
+          if (json.bookings) setBookings(json.bookings as Booking[])
+        }
       } catch {}
 
       // Show success overlay safely

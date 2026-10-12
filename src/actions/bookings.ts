@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import type { Booking, BookingStatus } from '@/types'
 
@@ -300,22 +301,66 @@ export async function getMyBookings(): Promise<Booking[]> {
  * Used for public availability display on the booking page.
  */
 export async function getCourtBookings(courtId: string, date: string): Promise<Booking[]> {
-  const supabase = await createClient()
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
+    const serviceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    const supabase = createSupabaseClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
 
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('*, court:courts(*), profile:profiles(full_name, avatar_url)')
-    .eq('court_id', courtId)
-    .eq('booking_date', date)
-    .neq('status', 'cancelled')
-    .order('start_hour', { ascending: true })
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*, court:courts(*), profile:profiles(full_name, avatar_url)')
+      .eq('court_id', courtId)
+      .eq('booking_date', date)
+      .neq('status', 'cancelled')
+      .order('start_hour', { ascending: true })
 
-  if (error) {
-    console.error('[getCourtBookings]', error)
+    if (error) {
+      console.error('[getCourtBookings]', error)
+      return []
+    }
+
+    return (data ?? []) as Booking[]
+  } catch (err) {
+    console.error('[getCourtBookings] exception:', err)
     return []
   }
+}
 
-  return (data ?? []) as Booking[]
+// ── getFacilityBookings ───────────────────────────────────────────────────────
+
+/**
+ * Returns all non-cancelled bookings for all courts on a given date.
+ * Bypasses RLS via service role so that all players and visitors see accurate availability.
+ */
+export async function getFacilityBookings(date: string): Promise<Booking[]> {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
+    const serviceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    const supabase = createSupabaseClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*, court:courts(*), profile:profiles(full_name, avatar_url)')
+      .eq('booking_date', date)
+      .neq('status', 'cancelled')
+      .order('start_hour', { ascending: true })
+
+    if (error) {
+      console.error('[getFacilityBookings] error:', error)
+      return []
+    }
+
+    return (data ?? []) as unknown as Booking[]
+  } catch (err) {
+    console.error('[getFacilityBookings] exception:', err)
+    return []
+  }
 }
 
 // ── getAllBookings ─────────────────────────────────────────────────────────────

@@ -66,27 +66,39 @@ export default function SchedulePage() {
   const dates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i))
 
   useEffect(() => {
+    let isCancelled = false
+
     async function loadData() {
       try {
         const [courtsRes, bookingsRes] = await Promise.all([
           supabase.from('courts').select('*').eq('is_active', true).order('name'),
-          supabase
-            .from('bookings')
-            .select('*, court:courts(*), profile:profiles(full_name, avatar_url)')
-            .eq('booking_date', selectedDate)
-            .neq('status', 'cancelled'),
+          fetch(`/api/bookings?date=${encodeURIComponent(selectedDate)}`, { cache: 'no-store' }),
         ])
-        if (courtsRes.data && courtsRes.data.length > 0) {
+
+        if (!isCancelled && courtsRes.data && courtsRes.data.length > 0) {
           setCourts(courtsRes.data as Court[])
         }
-        if (bookingsRes.data) {
-          setBookings(bookingsRes.data as Booking[])
+
+        if (!isCancelled && bookingsRes.ok) {
+          const json = await bookingsRes.json()
+          if (json.bookings) {
+            setBookings(json.bookings as Booking[])
+          }
         }
       } catch {
         // Fallback courts remain active
       }
     }
+
     loadData()
+
+    // Real-time synchronization polling every 8s across all devices & accounts
+    const interval = setInterval(loadData, 8000)
+
+    return () => {
+      isCancelled = true
+      clearInterval(interval)
+    }
   }, [selectedDate, supabase])
 
   return (
