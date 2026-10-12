@@ -81,26 +81,22 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
-  const now = new Date()
+  const upcoming = useMemo(() => {
+    const now = new Date()
+    return localBookings.filter((b) => {
+      if (b.status !== 'confirmed') return false
+      const dt = new Date(`${b.booking_date}T${String(b.start_hour).padStart(2, '0')}:00:00`)
+      return isAfter(dt, now)
+    })
+  }, [localBookings])
 
-  const upcoming = useMemo(
-    () =>
-      localBookings.filter((b) => {
-        if (b.status !== 'confirmed') return false
-        const dt = new Date(`${b.booking_date}T${String(b.start_hour).padStart(2, '0')}:00:00`)
-        return isAfter(dt, now)
-      }),
-    [localBookings],
-  )
-
-  const past = useMemo(
-    () =>
-      localBookings.filter((b) => {
-        const dt = new Date(`${b.booking_date}T${String(b.end_hour).padStart(2, '0')}:00:00`)
-        return !isAfter(dt, now) || b.status === 'cancelled'
-      }),
-    [localBookings],
-  )
+  const past = useMemo(() => {
+    const now = new Date()
+    return localBookings.filter((b) => {
+      const dt = new Date(`${b.booking_date}T${String(b.end_hour).padStart(2, '0')}:00:00`)
+      return !isAfter(dt, now) || b.status === 'cancelled'
+    })
+  }, [localBookings])
 
   const totalSpent = useMemo(
     () => localBookings.filter((b) => b.status === 'confirmed').reduce((s, b) => s + b.total_price, 0),

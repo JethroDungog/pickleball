@@ -79,15 +79,15 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-[var(--apple-border)]">
-              <p className="font-display font-bold text-2xl text-[var(--apple-text)]">44 × 20'</p>
+              <p className="font-display font-bold text-2xl text-[var(--apple-text)]">44 × 20&apos;</p>
               <p className="text-[11px] text-[var(--apple-subtext)] uppercase mt-1">Dimensions</p>
             </div>
             <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-[var(--apple-border)]">
-              <p className="font-display font-bold text-2xl text-[var(--apple-text)]">34"</p>
+              <p className="font-display font-bold text-2xl text-[var(--apple-text)]">34&quot;</p>
               <p className="text-[11px] text-[var(--apple-subtext)] uppercase mt-1">Center Net</p>
             </div>
             <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-[var(--apple-border)]">
-              <p className="font-display font-bold text-2xl text-[var(--apple-text)]">7'</p>
+              <p className="font-display font-bold text-2xl text-[var(--apple-text)]">7&apos;</p>
               <p className="text-[11px] text-[var(--apple-subtext)] uppercase mt-1">Kitchen</p>
             </div>
             <div className="p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-[var(--apple-border)]">

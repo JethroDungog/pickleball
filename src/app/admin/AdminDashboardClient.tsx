@@ -321,7 +321,7 @@ export default function AdminDashboardClient({ bookings: initialBookings, courts
             className="xl:col-span-2 bg-court-card border border-court-border rounded-2xl p-6 space-y-4"
           >
             <div className="flex items-center justify-between">
-              <h2 className="font-display font-bold text-xl text-white">TODAY'S SCHEDULE</h2>
+              <h2 className="font-display font-bold text-xl text-white">TODAY&apos;S SCHEDULE</h2>
               <span className="text-xs text-slate-500">{format(parseISO(today), 'MMM d, yyyy')}</span>
             </div>
             <MultiCourtGantt
@@ -340,7 +340,7 @@ export default function AdminDashboardClient({ bookings: initialBookings, courts
           >
             <div className="flex items-center gap-2">
               <Users size={15} className="text-slate-400" />
-              <h2 className="font-display font-bold text-lg text-white">TODAY'S BOOKINGS</h2>
+              <h2 className="font-display font-bold text-lg text-white">TODAY&apos;S BOOKINGS</h2>
             </div>
 
             {/* Search */}
@@ -493,7 +493,7 @@ export default function AdminDashboardClient({ bookings: initialBookings, courts
               <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/[0.06]">
                 <div className="flex items-center gap-2 mb-1.5">
                   <Activity size={13} className="text-white/40" />
-                  <span className="text-xs text-white/50 font-medium">Today's Revenue</span>
+                  <span className="text-xs text-white/50 font-medium">Today&apos;s Revenue</span>
                 </div>
                 <p className="font-display font-bold text-2xl text-[#30d158]">
                   {formatCurrency(revenue)}

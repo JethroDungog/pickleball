@@ -1,4 +1,4 @@
-# PickCourt Engineering & Design Guidelines
+# PickCourt Engineering & Design Guidelines 
 
 This file defines the core architecture, design philosophy, and asset standards for the **PickCourt** booking platform. Any AI agent or developer working on this codebase must adhere strictly to these standards.
 

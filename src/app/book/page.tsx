@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, addDays, parseISO, isToday } from 'date-fns'
@@ -165,20 +165,25 @@ export default function BookPage() {
   )
 
   // ── Draft computation ──────────────────────────────────────────────────────
-  const selectedCourt = courts.find((c) => c.id === selectedCourtId) ?? courts[0] ?? null
-  const draft: BookingDraft | null =
-    selectedCourtId && selectedStartHour !== null && selectedEndHour !== null && selectedCourt
-      ? {
-          courtId: selectedCourtId,
-          courtName: selectedCourt.name,
-          courtColor: selectedCourt.color_hex,
-          date: selectedDate,
-          startHour: selectedStartHour,
-          endHour: selectedEndHour,
-          hourlyRate: selectedCourt.hourly_rate,
-          totalPrice: selectedCourt.hourly_rate * (selectedEndHour - selectedStartHour),
-        }
-      : null
+  const selectedCourt = useMemo(
+    () => courts.find((c) => c.id === selectedCourtId) ?? courts[0] ?? null,
+    [courts, selectedCourtId]
+  )
+  const draft: BookingDraft | null = useMemo(() => {
+    if (!selectedCourtId || selectedStartHour === null || selectedEndHour === null || !selectedCourt) {
+      return null
+    }
+    return {
+      courtId: selectedCourtId,
+      courtName: selectedCourt.name,
+      courtColor: selectedCourt.color_hex,
+      date: selectedDate,
+      startHour: selectedStartHour,
+      endHour: selectedEndHour,
+      hourlyRate: selectedCourt.hourly_rate,
+      totalPrice: selectedCourt.hourly_rate * (selectedEndHour - selectedStartHour),
+    }
+  }, [selectedCourtId, selectedStartHour, selectedEndHour, selectedCourt, selectedDate])
 
   // ── Booking submission ─────────────────────────────────────────────────────
   const handleConfirmBooking = useCallback(async () => {
@@ -669,9 +674,8 @@ function StepHint({ step, text, accent }: { step: number; text: string; accent?:
       className="flex items-center gap-3 text-xs sm:text-sm p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] shadow-sm"
     >
       <div
-        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
-          accent ? 'bg-[#30d158] text-black' : 'bg-black/[0.05] dark:bg-white/10 text-[var(--apple-text)]'
-        }`}
+        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${accent ? 'bg-[#30d158] text-black' : 'bg-black/[0.05] dark:bg-white/10 text-[var(--apple-text)]'
+          }`}
       >
         {step}
       </div>

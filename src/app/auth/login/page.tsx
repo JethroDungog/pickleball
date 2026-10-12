@@ -395,7 +395,7 @@ function LoginForm() {
               </button>
 
               <div className="pt-2 text-center text-[11px] text-[var(--apple-subtext)]">
-                By continuing, you agree to PickCourt's{' '}
+                By continuing, you agree to PickCourt&apos;s{' '}
                 <Link href="/terms" className="underline hover:text-[var(--apple-text)]">
                   Terms of Service
                 </Link>
