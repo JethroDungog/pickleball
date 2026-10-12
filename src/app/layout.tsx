@@ -51,26 +51,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           {children}
         <Toaster
-          position="top-right"
+          position="top-left"
+          containerStyle={{
+            top: 76,
+            left: 20,
+          }}
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#161616',
-              color: '#f1f5f9',
-              border: '1px solid #242424',
-              borderRadius: '0.75rem',
-              fontSize: '0.875rem',
+              background: '#1c1c1e',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '1rem',
+              fontSize: '0.8125rem',
+              fontWeight: 500,
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
             },
             success: {
               iconTheme: {
-                primary: '#39ff14',
-                secondary: '#0d0d0d',
+                primary: '#30d158',
+                secondary: '#1c1c1e',
               },
             },
             error: {
               iconTheme: {
-                primary: '#ff006e',
-                secondary: '#0d0d0d',
+                primary: '#ff3b30',
+                secondary: '#1c1c1e',
               },
             },
           }}
