@@ -26,7 +26,7 @@ const DATE_STRIP_DAYS = 14
 
 const FALLBACK_COURTS: Court[] = [
   {
-    id: 'court-1-default',
+    id: '1fa9e1ab-9429-435e-bbbf-d48286090345',
     name: 'Court 1',
     description: 'Championship hard court with tournament-grade lighting',
     surface_type: 'hard',
@@ -37,7 +37,7 @@ const FALLBACK_COURTS: Court[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: 'court-2-default',
+    id: 'a3a01fcd-a8fd-4264-876a-cdcfb59c05f6',
     name: 'Court 2',
     description: 'Tournament grade synthetic court with shock absorption',
     surface_type: 'synthetic',
@@ -48,7 +48,7 @@ const FALLBACK_COURTS: Court[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: 'court-3-default',
+    id: '7eba227a-fe3b-4a34-8140-451aa178e73b',
     name: 'Court 3',
     description: 'Indoor climate-controlled pro synthetic court',
     surface_type: 'synthetic',
@@ -59,7 +59,7 @@ const FALLBACK_COURTS: Court[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: 'court-4-default',
+    id: '95142fde-40d5-40df-a29c-8ad0b24922a6',
     name: 'Court 4',
     description: 'Indoor stadium arena with broadcast lighting',
     surface_type: 'hard',
@@ -210,15 +210,21 @@ export default function BookPage() {
       }
 
       // Re-fetch bookings to reflect new state
-      const { data } = await supabase
-        .from('bookings')
-        .select('*, court:courts(*), profile:profiles(full_name, avatar_url)')
-        .eq('booking_date', selectedDate)
-        .neq('status', 'cancelled')
-      setBookings((data ?? []) as Booking[])
+      try {
+        const { data } = await supabase
+          .from('bookings')
+          .select('*, court:courts(*), profile:profiles(full_name, avatar_url)')
+          .eq('booking_date', selectedDate)
+          .neq('status', 'cancelled')
+        if (data) setBookings(data as Booking[])
+      } catch {}
 
-      // Show success overlay
-      setBookingSuccess({ booking: result.booking!, court: selectedCourt! })
+      // Show success overlay safely
+      if (result.booking && selectedCourt) {
+        setBookingSuccess({ booking: result.booking, court: selectedCourt })
+      } else {
+        toast.success('Court reserved successfully!')
+      }
 
       // Reset selection
       setSelectedStartHour(null)

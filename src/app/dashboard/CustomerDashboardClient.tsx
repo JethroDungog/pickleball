@@ -11,12 +11,12 @@ import {
   Clock,
   PlusCircle,
   ChevronRight,
-  Zap,
+  LogOut,
   User,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
-import { formatCurrency, formatDate, formatHour } from '@/lib/utils'
+import { formatCurrency, formatHour } from '@/lib/utils'
 import BookingCard from '@/components/BookingCard'
 import Footer from '@/components/Footer'
 import type { Booking, Court, Profile } from '@/types'
@@ -49,25 +49,17 @@ function StatCard({
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.1 + index * 0.05, duration: 0.4 }}
-      className="relative overflow-hidden rounded-2xl bg-court-card border border-court-border p-5 flex flex-col gap-3"
+      className="relative overflow-hidden rounded-3xl bg-[var(--apple-card)] border border-[var(--apple-border)] p-5 flex flex-col justify-between shadow-xs transition-colors"
     >
       <div className="flex items-center justify-between">
-        <div className="p-2 rounded-xl bg-court-surface">
-          <Icon size={16} className={accent ?? 'text-slate-400'} />
+        <div className="p-2.5 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] text-[var(--apple-text)]">
+          <Icon size={16} className={accent ?? 'text-[var(--apple-text)]'} />
         </div>
-        <Zap size={12} className="text-slate-700" />
       </div>
-      <div>
-        <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">{label}</p>
-        <p className={`font-display font-bold text-2xl mt-1 ${accent ?? 'text-white'}`}>{value}</p>
+      <div className="mt-3">
+        <p className="text-[var(--apple-subtext)] text-[10px] sm:text-xs font-semibold uppercase tracking-wider">{label}</p>
+        <p className={`font-display font-bold text-2xl sm:text-3xl mt-1 text-[var(--apple-text)] tabular-nums`}>{value}</p>
       </div>
-      {/* Solid accent line */}
-      <div
-        className="absolute bottom-0 left-0 h-0.5 w-12 rounded-full"
-        style={{
-          backgroundColor: accent === 'text-neon-green' ? '#39ff14' : accent ? '#00f5ff' : '#242424',
-        }}
-      />
     </motion.div>
   )
 }
@@ -127,46 +119,40 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
   }
 
   return (
-    <div className="min-h-screen bg-court-dark text-slate-100">
+    <div className="min-h-screen bg-[var(--apple-bg)] text-[var(--apple-text)] transition-colors">
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-16 space-y-10">
         {/* ── Header ── */}
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4"
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--apple-border)] pb-8"
         >
           <div>
-            <p className="text-slate-500 text-sm font-medium uppercase tracking-widest mb-1">
-              {greeting}, {firstName}
-            </p>
-            <h1 className="font-display font-extrabold text-5xl sm:text-6xl text-white tracking-tight leading-none">
-              MY COURTS
-            </h1>
-            <div className="flex items-center gap-2 mt-3">
-              <div className="w-8 h-0.5 bg-neon-green" />
-              <p className="text-slate-400 text-sm">Your pickleball command centre</p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-[var(--apple-border)] text-xs font-semibold text-[var(--apple-subtext)] mb-3">
+              <User size={13} />
+              <span>Player Pass Portal</span>
             </div>
+            <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-[var(--apple-text)] tracking-tight">
+              {greeting}, {firstName}
+            </h1>
+            <p className="text-[var(--apple-subtext)] text-xs sm:text-sm mt-1">
+              Manage your confirmed court passes, view QR access tokens, and reserve session slots.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/book"
-              className="btn-primary gap-2"
+              className="btn-primary text-xs !py-2.5 !px-5 inline-flex items-center gap-2"
             >
-              <PlusCircle size={16} />
-              Quick Book
-            </Link>
-            <Link
-              href="/auth/logout"
-              className="btn-secondary text-xs px-4 py-2"
-            >
-              Sign Out
+              <PlusCircle size={15} />
+              <span>Quick Book</span>
             </Link>
           </div>
         </motion.header>
 
         {/* ── Stats ── */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-4" aria-label="Booking statistics">
+        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4" aria-label="Booking statistics">
           <StatCard
             index={0}
             icon={CalendarDays}
@@ -178,7 +164,6 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
             icon={Clock}
             label="Upcoming"
             value={String(upcoming.length)}
-            accent="text-neon-green"
           />
           <StatCard
             index={2}
@@ -202,9 +187,11 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
             transition={{ delay: 0.3 }}
             className="flex items-center gap-3 mb-5"
           >
-            <h2 className="font-display font-bold text-2xl text-white">UPCOMING PASSES</h2>
-            <span className="px-2 py-0.5 rounded-full bg-neon-green/10 border border-neon-green/30 text-neon-green text-xs font-bold">
-              {upcoming.length}
+            <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--apple-text)] tracking-tight">
+              UPCOMING PASSES
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+              {upcoming.length} Active
             </span>
           </motion.div>
 
@@ -213,14 +200,14 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="rounded-2xl border border-dashed border-court-border bg-court-card/50 p-10 text-center"
+              className="rounded-3xl border border-dashed border-[var(--apple-border)] bg-[var(--apple-card)]/50 p-10 text-center"
             >
-              <CalendarDays size={32} className="text-slate-700 mx-auto mb-3" />
-              <p className="text-slate-500 font-medium">No upcoming bookings</p>
-              <p className="text-slate-600 text-sm mt-1">Ready to hit the court?</p>
-              <Link href="/book" className="btn-primary mt-5 mx-auto w-fit inline-flex">
-                <PlusCircle size={15} />
-                Book a Court
+              <CalendarDays size={32} className="text-[var(--apple-muted)] mx-auto mb-3" />
+              <p className="text-[var(--apple-text)] font-semibold text-base">No upcoming reservations</p>
+              <p className="text-[var(--apple-subtext)] text-xs sm:text-sm mt-1">Ready to hit the court? Pick a time slot today.</p>
+              <Link href="/book" className="btn-primary mt-5 mx-auto w-fit inline-flex items-center gap-2 text-xs !py-2 !px-4">
+                <PlusCircle size={14} />
+                <span>Book a Court</span>
               </Link>
             </motion.div>
           ) : (
@@ -247,29 +234,29 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="font-display font-bold text-2xl text-white mb-5"
+              className="font-display font-bold text-xl sm:text-2xl text-[var(--apple-text)] tracking-tight mb-5"
             >
               PAST SESSIONS
             </motion.h2>
-            <div className="rounded-2xl border border-court-border bg-court-card overflow-hidden divide-y divide-court-border">
+            <div className="rounded-3xl border border-[var(--apple-border)] bg-[var(--apple-card)] overflow-hidden divide-y divide-[var(--apple-border)] shadow-xs">
               {past.map((booking, i) => (
                 <motion.div
                   key={booking.id}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.55 + i * 0.04 }}
-                  className="flex items-center justify-between px-5 py-3.5 hover:bg-court-surface/50 transition-colors group"
+                  className="flex items-center justify-between px-5 py-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="w-1.5 h-8 rounded-full shrink-0"
+                      className="w-2 h-8 rounded-full shrink-0"
                       style={{ backgroundColor: booking.court.color_hex }}
                     />
                     <div className="min-w-0">
-                      <p className="font-semibold text-sm text-white truncate">
+                      <p className="font-semibold text-sm text-[var(--apple-text)] truncate">
                         {booking.court.name}
                       </p>
-                      <p className="text-slate-500 text-xs">
+                      <p className="text-[var(--apple-subtext)] text-xs mt-0.5">
                         {format(parseISO(booking.booking_date), 'MMM d, yyyy')} ·{' '}
                         {formatHour(booking.start_hour)}–{formatHour(booking.end_hour)}
                       </p>
@@ -277,18 +264,20 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
                     <span
-                      className={`text-xs font-bold tracking-widest ${
-                        booking.status === 'cancelled' ? 'text-neon-pink' : 'text-slate-500'
+                      className={`text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full ${
+                        booking.status === 'cancelled'
+                          ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                          : 'bg-black/[0.05] dark:bg-white/[0.06] text-[var(--apple-subtext)]'
                       }`}
                     >
                       {booking.status.toUpperCase()}
                     </span>
-                    <span className="text-slate-400 text-sm font-medium">
+                    <span className="text-[var(--apple-text)] text-sm font-semibold tabular-nums">
                       {formatCurrency(booking.total_price)}
                     </span>
                     <ChevronRight
                       size={14}
-                      className="text-slate-700 group-hover:text-slate-400 transition-colors"
+                      className="text-[var(--apple-muted)] group-hover:text-[var(--apple-text)] transition-colors"
                     />
                   </div>
                 </motion.div>

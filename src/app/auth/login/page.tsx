@@ -66,9 +66,13 @@ function LoginForm() {
         if (error) {
           setErrorMsg(error.message)
           toast.error(error.message)
+        } else if (data.session) {
+          toast.success('Account created!')
+          router.push(redirectTo)
+          router.refresh()
         } else if (data.user) {
           setSignUpSuccess(true)
-          toast.success('Account created!')
+          toast.success('Account created! Please check your email to confirm.')
         }
       }
     } catch {

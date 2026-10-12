@@ -10,7 +10,6 @@ import {
   X,
   LogOut,
   User,
-  BarChart3,
   ChevronRight,
   Zap,
   Shield,
@@ -175,13 +174,6 @@ export default function Navbar() {
                           <span>Staff Console</span>
                         </Link>
                       )}
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/5 border border-black/[0.06] dark:border-white/10 hover:bg-black/[0.08] dark:hover:bg-white/10 transition-all text-xs font-medium text-[var(--apple-text)]"
-                      >
-                        <BarChart3 size={13} />
-                        Dashboard
-                      </Link>
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-black/[0.06] dark:bg-white/10 border border-black/[0.08] dark:border-white/15 flex items-center justify-center text-xs font-semibold text-[var(--apple-text)]">
                           {initials}
@@ -293,14 +285,6 @@ export default function Navbar() {
                         Staff Console
                       </Link>
                     )}
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-2 px-4 py-3 rounded-2xl text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                    >
-                      <BarChart3 size={16} />
-                      Dashboard
-                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="flex items-center gap-2 px-4 py-3 rounded-2xl text-sm text-red-400 hover:bg-red-500/10 transition-all"

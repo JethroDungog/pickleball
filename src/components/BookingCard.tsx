@@ -7,9 +7,9 @@ import { X, CheckCircle2, AlertCircle, Clock, Zap } from 'lucide-react'
 import { cn, formatHour, formatCurrency } from '@/lib/utils'
 import type { Booking, Court } from '@/types'
 
-// ── QR Code placeholder SVG ───────────────────────────────────────────────────
+// ── QR Code SVG ──────────────────────────────────────────────────────────────
 function QRPlaceholder({ id }: { id: string }) {
-  // Derive a deterministic 6×6 bit grid from the booking ID
+  // Deterministic 6×6 bit grid from booking ID
   const bits: boolean[] = Array.from({ length: 36 }, (_, i) => {
     const charCode = id.charCodeAt(i % id.length) ?? 65
     return (charCode + i * 7) % 3 !== 0
@@ -17,21 +17,21 @@ function QRPlaceholder({ id }: { id: string }) {
 
   return (
     <svg
-      width="72"
-      height="72"
+      width="64"
+      height="64"
       viewBox="0 0 72 72"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label="Booking QR code"
-      className="opacity-80"
+      className="text-[var(--apple-text)] opacity-85"
     >
       {/* Corner squares */}
-      <rect x="4" y="4" width="18" height="18" rx="2" fill="none" stroke="#39ff14" strokeWidth="2" />
-      <rect x="7" y="7" width="12" height="12" rx="1" fill="#39ff14" opacity="0.9" />
-      <rect x="50" y="4" width="18" height="18" rx="2" fill="none" stroke="#39ff14" strokeWidth="2" />
-      <rect x="53" y="7" width="12" height="12" rx="1" fill="#39ff14" opacity="0.9" />
-      <rect x="4" y="50" width="18" height="18" rx="2" fill="none" stroke="#39ff14" strokeWidth="2" />
-      <rect x="7" y="53" width="12" height="12" rx="1" fill="#39ff14" opacity="0.9" />
+      <rect x="4" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <rect x="8" y="8" width="10" height="10" rx="1.5" fill="currentColor" />
+      <rect x="50" y="4" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <rect x="54" y="8" width="10" height="10" rx="1.5" fill="currentColor" />
+      <rect x="4" y="50" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <rect x="8" y="54" width="10" height="10" rx="1.5" fill="currentColor" />
 
       {/* Data modules */}
       {bits.map((filled, i) => {
@@ -40,16 +40,16 @@ function QRPlaceholder({ id }: { id: string }) {
         const x = 27 + col * 7
         const y = 27 + row * 7
         return filled ? (
-          <rect key={i} x={x} y={y} width="5" height="5" rx="0.5" fill="#39ff14" opacity="0.7" />
+          <rect key={i} x={x} y={y} width="5" height="5" rx="1" fill="currentColor" />
         ) : null
       })}
 
       {/* Bottom-right module */}
-      <rect x="50" y="50" width="18" height="18" rx="2" fill="none" stroke="#39ff14" strokeWidth="2" />
-      <rect x="53" y="53" width="5" height="5" rx="0.5" fill="#39ff14" />
-      <rect x="61" y="53" width="5" height="5" rx="0.5" fill="#39ff14" />
-      <rect x="53" y="61" width="5" height="5" rx="0.5" fill="#39ff14" />
-      <rect x="61" y="61" width="5" height="5" rx="0.5" fill="#39ff14" />
+      <rect x="50" y="50" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="2.5" />
+      <rect x="54" y="54" width="5" height="5" rx="1" fill="currentColor" />
+      <rect x="61" y="54" width="5" height="5" rx="1" fill="currentColor" />
+      <rect x="54" y="61" width="5" height="5" rx="1" fill="currentColor" />
+      <rect x="61" y="61" width="5" height="5" rx="1" fill="currentColor" />
     </svg>
   )
 }
@@ -107,19 +107,19 @@ export default function BookingCard({
   }
 
   const isCancelled = booking.status === 'cancelled'
-  const isMaintenance = booking.status === 'maintenance'
 
   return (
     <motion.article
-      initial={{ x: -40, opacity: 0 }}
+      initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      exit={{ x: 40, opacity: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.07, ease: [0.25, 0.46, 0.45, 0.94] }}
-      whileHover={!isCancelled ? { y: -3, boxShadow: '0 16px 40px rgba(0,0,0,0.7)' } : undefined}
+      exit={{ x: 20, opacity: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.05 }}
       className={cn(
-        'relative flex overflow-hidden rounded-2xl border',
-        'bg-court-card',
-        isCancelled ? 'border-neon-pink/20 opacity-70' : 'border-court-border',
+        'relative flex overflow-hidden rounded-3xl border transition-all',
+        'bg-[var(--apple-card)]',
+        isCancelled
+          ? 'border-rose-500/20 opacity-60'
+          : 'border-[var(--apple-border)] shadow-xs hover:border-black/20 dark:hover:border-white/20',
       )}
       aria-label={`Booking ${shortId} for ${court.name}`}
     >
@@ -139,7 +139,7 @@ export default function BookingCard({
             <h3
               className={cn(
                 'font-display font-bold text-xl leading-none tracking-tight truncate',
-                isCancelled ? 'line-through text-slate-500' : 'text-white',
+                isCancelled ? 'line-through text-[var(--apple-subtext)]' : 'text-[var(--apple-text)]',
               )}
             >
               {court.name}
@@ -149,41 +149,41 @@ export default function BookingCard({
 
           {/* Surface type */}
           <div
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-widest"
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider"
             style={{
-              backgroundColor: `${court.color_hex}18`,
+              backgroundColor: `${court.color_hex}14`,
               color: court.color_hex,
               border: `1px solid ${court.color_hex}30`,
             }}
           >
-            <Zap size={9} />
+            <Zap size={10} />
             {SURFACE_LABELS[court.surface_type] ?? court.surface_type.toUpperCase()}
             {court.is_indoor ? ' · INDOOR' : ' · OUTDOOR'}
           </div>
 
           {/* Date & time */}
           <div className="space-y-1">
-            <p className="text-slate-100 font-semibold text-sm">
+            <p className="text-[var(--apple-text)] font-semibold text-sm">
               {format(dateObj, 'EEEE, MMMM d, yyyy')}
             </p>
-            <div className="flex items-center gap-1.5 text-slate-400 text-sm">
+            <div className="flex items-center gap-1.5 text-[var(--apple-subtext)] text-xs sm:text-sm">
               <Clock size={13} />
               <span>
                 {formatHour(booking.start_hour)} — {formatHour(booking.end_hour)}
               </span>
-              <span className="text-slate-600">·</span>
-              <span>{booking.end_hour - booking.start_hour}h</span>
+              <span className="opacity-40">·</span>
+              <span>{booking.end_hour - booking.start_hour}h duration</span>
             </div>
           </div>
 
           {/* Price */}
-          <p className="text-neon-green font-display font-bold text-lg">
+          <p className="font-display font-bold text-lg text-[var(--apple-text)] tabular-nums">
             {formatCurrency(booking.total_price)}
           </p>
 
           {/* Notes */}
           {booking.notes && (
-            <p className="text-slate-500 text-xs italic truncate">Note: {booking.notes}</p>
+            <p className="text-[var(--apple-subtext)] text-xs italic truncate">Note: {booking.notes}</p>
           )}
 
           {/* Cancel button */}
@@ -195,10 +195,10 @@ export default function BookingCard({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 onClick={handleCancel}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-neon-pink transition-colors duration-200 mt-1"
+                className="flex items-center gap-1.5 text-xs text-rose-500 hover:text-rose-600 transition-colors mt-1 font-medium cursor-pointer"
               >
                 <X size={12} />
-                Cancel booking
+                Cancel reservation
               </motion.button>
             )}
 
@@ -210,18 +210,18 @@ export default function BookingCard({
                 exit={{ opacity: 0, y: -4 }}
                 className="flex items-center gap-2 mt-1"
               >
-                <span className="text-xs text-neon-pink font-medium">Confirm cancel?</span>
+                <span className="text-xs text-rose-500 font-semibold">Confirm cancel?</span>
                 <button
                   onClick={handleCancel}
-                  className="text-xs px-2 py-0.5 rounded-md bg-neon-pink/10 border border-neon-pink/30 text-neon-pink hover:bg-neon-pink/20 transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-semibold hover:bg-rose-500/20 transition-colors cursor-pointer"
                 >
-                  Yes
+                  Yes, cancel
                 </button>
                 <button
                   onClick={handleCancelAbort}
-                  className="text-xs px-2 py-0.5 rounded-md bg-court-surface border border-court-border text-slate-400 hover:text-white transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-[var(--apple-border)] text-[var(--apple-text)] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] transition-colors cursor-pointer"
                 >
-                  No
+                  Keep
                 </button>
               </motion.div>
             )}
@@ -233,8 +233,8 @@ export default function BookingCard({
                 animate={{ opacity: 1 }}
                 className="flex items-center gap-2 mt-1"
               >
-                <div className="w-3 h-3 rounded-full border-2 border-neon-pink/40 border-t-neon-pink animate-spin" />
-                <span className="text-xs text-slate-500">Cancelling…</span>
+                <div className="w-3 h-3 rounded-full border-2 border-rose-500/40 border-t-rose-500 animate-spin" />
+                <span className="text-xs text-[var(--apple-subtext)]">Cancelling…</span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -242,16 +242,16 @@ export default function BookingCard({
 
         {/* ── Perforated divider ── */}
         <div
-          className="w-px shrink-0 self-stretch border-l-2 border-dashed border-court-border my-3"
+          className="w-px shrink-0 self-stretch border-l-2 border-dashed border-[var(--apple-border)] my-3"
           aria-hidden="true"
         />
 
         {/* ── Stub (right side) ── */}
-        <div className="w-28 shrink-0 flex flex-col items-center justify-center gap-3 px-3 py-4">
+        <div className="w-28 sm:w-32 shrink-0 flex flex-col items-center justify-center gap-2.5 px-3 py-4 bg-black/[0.01] dark:bg-white/[0.01]">
           <QRPlaceholder id={booking.id} />
           <div className="text-center">
-            <p className="text-[9px] text-slate-600 uppercase tracking-widest">Booking ID</p>
-            <p className="font-display font-bold text-xs text-slate-300 tracking-widest mt-0.5">
+            <p className="text-[9px] text-[var(--apple-subtext)] uppercase font-semibold tracking-wider">Pass ID</p>
+            <p className="font-display font-bold text-xs text-[var(--apple-text)] tracking-wider mt-0.5">
               #{shortId}
             </p>
           </div>
@@ -265,25 +265,23 @@ export default function BookingCard({
 function StatusBadge({ status }: { status: string }) {
   if (status === 'confirmed') {
     return (
-      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest text-neon-green bg-neon-green/10 border border-neon-green/30"
-        style={{ boxShadow: '0 0 8px rgba(57,255,20,0.25)' }}
-      >
-        <CheckCircle2 size={9} />
+      <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+        <CheckCircle2 size={10} />
         CONFIRMED
       </span>
     )
   }
   if (status === 'cancelled') {
     return (
-      <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest text-neon-pink bg-neon-pink/10 border border-neon-pink/30">
-        <X size={9} />
+      <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20">
+        <X size={10} />
         CANCELLED
       </span>
     )
   }
   return (
-    <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest text-neon-yellow bg-neon-yellow/10 border border-neon-yellow/30">
-      <AlertCircle size={9} />
+    <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20">
+      <AlertCircle size={10} />
       MAINTENANCE
     </span>
   )
