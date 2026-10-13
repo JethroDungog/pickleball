@@ -36,12 +36,15 @@ export function formatDate(date: string | Date): string {
 }
 
 /**
- * Converts a 24-hour integer (0–23) to a 12-hour AM/PM label.
+ * Converts a 24-hour integer (0–24) to a 12-hour AM/PM label.
+ * Supports hour 24 as 12:00 AM (midnight end of day).
  * @example formatHour(0)  → '12:00 AM'
  * @example formatHour(13) → '1:00 PM'
+ * @example formatHour(24) → '12:00 AM'
  */
 export function formatHour(hour: number): string {
-  if (hour < 0 || hour > 23) throw new RangeError(`hour must be 0–23, got ${hour}`)
+  if (hour < 0 || hour > 24) throw new RangeError(`hour must be 0–24, got ${hour}`)
+  if (hour === 0 || hour === 24) return '12:00 AM'
   const period = hour < 12 ? 'AM' : 'PM'
   const h = hour % 12 === 0 ? 12 : hour % 12
   return `${h}:00 ${period}`

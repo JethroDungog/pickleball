@@ -85,7 +85,8 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
   const past = useMemo(() => {
     const now = new Date()
     return localBookings.filter((b) => {
-      const dt = new Date(`${b.booking_date}T${String(b.end_hour).padStart(2, '0')}:00:00`)
+      const dt = new Date(`${b.booking_date}T00:00:00`)
+      dt.setHours(b.end_hour)
       return !isAfter(dt, now) || b.status === 'cancelled'
     })
   }, [localBookings])
