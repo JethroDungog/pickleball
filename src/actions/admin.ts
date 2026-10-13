@@ -15,12 +15,6 @@ import type {
 // ── Auth guard ────────────────────────────────────────────────────────────────
 
 async function requireSuperAdmin() {
-  const cookieStore = cookies()
-  const previewRole = cookieStore.get('preview_role')?.value
-  if (previewRole === 'super_admin') {
-    return { id: 'preview-super-admin-id', role: 'super_admin' }
-  }
-
   const supabase = await createClient()
   const {
     data: { user },
@@ -277,23 +271,11 @@ export async function updateCourt(
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const actor = await requireSuperAdmin()
-    const cookieStore = cookies()
-    const isPreview = cookieStore.get('preview_role')?.value === 'super_admin' || courtId.startsWith('court-') || courtId.length < 5
-
-    if (isPreview) {
-      revalidatePath('/super-admin')
-      revalidatePath('/')
-      revalidatePath('/admin')
-      return { success: true }
-    }
-
     const supabase = await createClient()
     const { error } = await supabase.from('courts').update(updates).eq('id', courtId)
 
     if (error) {
-      console.warn('Court update note:', error.message)
-      // If table row is not found or mock ID, still allow preview success
-      return { success: true }
+      return { success: false, error: error.message }
     }
 
     try {

@@ -204,35 +204,24 @@ async function getAllCourts(): Promise<Court[]> {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-interface AdminPageProps {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}
-
-export default async function AdminPage({ searchParams }: AdminPageProps) {
-  const cookieStore = cookies()
-  const previewCookie = cookieStore.get('preview_role')?.value
-  const previewParam = typeof searchParams?.preview === 'string' ? searchParams.preview : undefined
-  const isPreview = previewParam === 'admin' || previewParam === 'super_admin' || previewCookie === 'admin' || previewCookie === 'super_admin'
-
+export default async function AdminPage() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user && !isPreview) {
+  if (!user) {
     redirect('/auth/login?redirectTo=/admin')
   }
 
-  if (user && !isPreview) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single<Pick<Profile, 'role'>>()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single<Pick<Profile, 'role'>>()
 
-    if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
-      redirect('/unauthorized')
-    }
+  if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
+    redirect('/unauthorized')
   }
 
   const today = new Date().toISOString().split('T')[0]

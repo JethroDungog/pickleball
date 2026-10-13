@@ -113,23 +113,21 @@ const DEMO_AUDIT_LOGS: AuditLog[] = [
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
 
-async function getSuperAdminData(isPreview: boolean) {
+async function getSuperAdminData() {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user && !isPreview) redirect('/auth/login?redirectTo=/super-admin')
+  if (!user) redirect('/auth/login?redirectTo=/super-admin')
 
-  if (user && !isPreview) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
 
-    if (!profile || profile.role !== 'super_admin') redirect('/unauthorized')
-  }
+  if (!profile || profile.role !== 'super_admin') redirect('/unauthorized')
 
   // Parallel data fetch with resilient fallbacks
   const fetchCourts = async () => {
@@ -234,17 +232,8 @@ function KpiCard({ label, value, sub, icon, accent = 'green' }: KpiCardProps) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-interface SuperAdminPageProps {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}
-
-export default async function SuperAdminPage({ searchParams }: SuperAdminPageProps) {
-  const cookieStore = cookies()
-  const previewCookie = cookieStore.get('preview_role')?.value
-  const previewParam = typeof searchParams?.preview === 'string' ? searchParams.preview : undefined
-  const isPreview = previewParam === 'super_admin' || previewCookie === 'super_admin'
-
-  const { profiles, auditLogs, metrics, courts, bookingsByCourt } = await getSuperAdminData(isPreview)
+export default async function SuperAdminPage() {
+  const { profiles, auditLogs, metrics, courts, bookingsByCourt } = await getSuperAdminData()
 
   return (
     <main className="min-h-screen bg-court-dark">
