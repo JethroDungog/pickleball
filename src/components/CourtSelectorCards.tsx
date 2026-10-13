@@ -32,10 +32,10 @@ export default function CourtSelectorCards({
   return (
     <div className="w-full space-y-2.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold tracking-wider uppercase text-white/50">
+        <span className="text-xs font-bold tracking-wider uppercase text-[var(--apple-muted)]">
           Select Court (4 Available)
         </span>
-        <span className="text-[11px] text-white/40">
+        <span className="text-[11px] text-[var(--apple-subtext)]">
           24/7 Facility · High-Visibility Lines
         </span>
       </div>
@@ -106,9 +106,9 @@ export default function CourtSelectorCards({
 
                 {/* Price and Availability */}
                 <div className="flex items-center justify-between pt-1">
-                  <span className="font-semibold text-sm text-[var(--apple-text)]">
+                  <span className={cn('font-semibold text-sm', isSelected ? 'text-white' : 'text-[var(--apple-text)]')}>
                     {formatCurrency(court.hourly_rate)}
-                    <span className="text-[10px] font-normal text-[var(--apple-subtext)]">/hr</span>
+                    <span className={cn('text-[10px] font-normal', isSelected ? 'text-white/70' : 'text-[var(--apple-subtext)]')}>/hr</span>
                   </span>
 
                   <span

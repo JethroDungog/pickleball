@@ -293,12 +293,24 @@ export default function CourtMapPicker({
   }
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden border border-white/10 bg-[#080f08]">
-      {/* Mode label */}
-      <div className="absolute top-3 left-4 flex items-center gap-2 z-10">
-        <span className="text-[10px] font-bold tracking-[3px] text-neon-green/70 uppercase">
-          {mode === 'preview' ? 'Facility Overview' : 'Select Court'}
+    <div className="relative w-full rounded-3xl overflow-hidden border border-[var(--apple-border)] bg-[#18181b] text-white shadow-sm">
+      {/* Top Header Bar: Clean Apple Obsidian bar with ZERO court overlap */}
+      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-black/30">
+        <span className="text-[11px] font-bold tracking-wider text-white/80 uppercase">
+          {mode === 'preview' ? 'Facility Overview' : '2D Court Layout'}
         </span>
+        <div className="flex items-center gap-3">
+          {[
+            { color: '#30d158', label: 'Available' },
+            { color: '#ffd60a', label: 'Partial' },
+            { color: '#ff453a', label: 'Full' },
+          ].map(({ color, label }) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+              <span className="text-[10px] text-white/60 font-medium">{label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* SVG map */}
@@ -391,7 +403,7 @@ export default function CourtMapPicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none hidden sm:block"
           >
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-black/90 border border-white/15 backdrop-blur-xl shadow-xl">
               <div
@@ -414,13 +426,13 @@ export default function CourtMapPicker({
               <div className="text-right">
                 <p
                   className="text-xs font-bold"
-                  style={{ color: courtAvailability[tooltipCourt.id]?.free === 0 ? '#ef4444' : '#39ff14' }}
+                  style={{ color: courtAvailability[tooltipCourt.id]?.free === 0 ? '#ef4444' : '#30d158' }}
                 >
                   {courtAvailability[tooltipCourt.id]?.free ?? HOURS_IN_DAY} hrs free
                 </p>
               </div>
               {mode === 'picker' && (
-                <div className="text-[9px] text-neon-green/70 font-medium border border-neon-green/30 rounded px-1.5 py-0.5">
+                <div className="text-[9px] text-white/60 font-medium border border-white/20 rounded px-1.5 py-0.5">
                   click to select
                 </div>
               )}
@@ -428,20 +440,6 @@ export default function CourtMapPicker({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Legend */}
-      <div className="absolute top-3 right-4 flex items-center gap-3">
-        {[
-          { color: '#22c55e', label: 'Available' },
-          { color: '#f59e0b', label: 'Partial' },
-          { color: '#ef4444', label: 'Full' },
-        ].map(({ color, label }) => (
-          <div key={label} className="flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
-            <span className="text-[9px] text-white/40 font-medium">{label}</span>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }

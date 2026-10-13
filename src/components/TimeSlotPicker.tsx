@@ -222,15 +222,15 @@ export default function TimeSlotPicker({
         </div>
       </div>
 
-      {/* Period Filter Tabs (Apple pill chips) */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+      {/* Period Filter Tabs (Apple pill chips - horizontal scroll on mobile) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
         {[
-          { id: 'all', label: 'All 24h', icon: Sparkles },
-          { id: 'morning', label: 'Morning (6AM–12PM)', icon: Sun },
-          { id: 'afternoon', label: 'Afternoon (12PM–5PM)', icon: Sun },
-          { id: 'evening', label: 'Evening (5PM–10PM)', icon: Moon },
-          { id: 'night', label: 'Overnight (10PM–6AM)', icon: Moon },
-        ].map(({ id, label, icon: Icon }) => {
+          { id: 'all', label: 'All 24h', shortLabel: 'All 24h', icon: Sparkles },
+          { id: 'morning', label: 'Morning (6AM–12PM)', shortLabel: 'Morning', icon: Sun },
+          { id: 'afternoon', label: 'Afternoon (12PM–5PM)', shortLabel: 'Afternoon', icon: Sun },
+          { id: 'evening', label: 'Evening (5PM–10PM)', shortLabel: 'Evening', icon: Moon },
+          { id: 'night', label: 'Overnight (10PM–6AM)', shortLabel: 'Overnight', icon: Moon },
+        ].map(({ id, label, shortLabel, icon: Icon }) => {
           const isActive = period === id
           return (
             <button
@@ -238,14 +238,15 @@ export default function TimeSlotPicker({
               type="button"
               onClick={() => setPeriod(id as PeriodFilter)}
               className={cn(
-                'flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer border',
+                'shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full text-xs transition-all cursor-pointer border',
                 isActive
                   ? 'bg-neutral-900 text-white dark:bg-white dark:text-black border-black dark:border-white font-semibold shadow-sm'
                   : 'bg-[var(--apple-card)] text-[var(--apple-subtext)] border-[var(--apple-border)] hover:bg-[var(--apple-card-hover)] shadow-sm',
               )}
             >
-              <Icon size={12} className={isActive ? 'text-current' : 'text-[var(--apple-muted)]'} />
-              <span>{label}</span>
+              <Icon size={12} className={cn('shrink-0', isActive ? 'text-current' : 'text-[var(--apple-muted)]')} />
+              <span className="hidden sm:inline">{label}</span>
+              <span className="sm:hidden">{shortLabel}</span>
             </button>
           )
         })}

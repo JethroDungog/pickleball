@@ -328,7 +328,7 @@ function BookContent() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <main
-      className="min-h-screen pt-20 sm:pt-24 bg-[var(--apple-bg)] text-[var(--apple-text)] flex flex-col justify-between transition-colors"
+      className="min-h-screen pt-20 sm:pt-24 pb-32 sm:pb-20 bg-[var(--apple-bg)] text-[var(--apple-text)] flex flex-col justify-between transition-colors overflow-x-hidden"
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
       <div>
