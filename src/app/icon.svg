@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="8" fill="#000000"/>
+  <!-- Paddle blade -->
+  <path d="M12 7C9.23858 7 7 9.23858 7 12V16C7 18.7614 9.23858 21 12 21H14C16.7614 21 19 18.7614 19 16V12C19 9.23858 16.7614 7 14 7H12Z" fill="#FFFFFF"/>
+  <!-- Paddle handle -->
+  <rect x="11.5" y="21" width="3" height="6" rx="1.5" fill="#FFFFFF"/>
+  <!-- Ball -->
+  <circle cx="23" cy="11" r="3.5" fill="#30D158"/>
+  <circle cx="22" cy="10" r="0.8" fill="#000000"/>
+  <circle cx="24" cy="10" r="0.8" fill="#000000"/>
+  <circle cx="23" cy="12" r="0.8" fill="#000000"/>
+</svg>

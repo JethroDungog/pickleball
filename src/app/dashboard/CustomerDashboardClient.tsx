@@ -15,7 +15,7 @@ import {
   User,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { createClient } from '@/lib/supabase/client'
+import { cancelBooking } from '@/actions/bookings'
 import { formatCurrency, formatHour } from '@/lib/utils'
 import BookingCard from '@/components/BookingCard'
 import Footer from '@/components/Footer'
@@ -101,14 +101,10 @@ export default function CustomerDashboardClient({ profile, bookings, userEmail }
 
   // Optimistic cancel
   async function handleCancel(id: string) {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', id)
+    const res = await cancelBooking(id)
 
-    if (error) {
-      toast.error('Failed to cancel booking. Please try again.')
+    if (!res.success) {
+      toast.error(res.error || 'Failed to cancel booking. Please try again.')
       return
     }
 

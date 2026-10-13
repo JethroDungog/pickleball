@@ -108,7 +108,7 @@ function RateEditor({ courtId, initialRate, onSaved }: RateEditorProps) {
         onClick={() => setEditing(true)}
         className="group flex items-center gap-1.5 text-neon-green font-mono font-semibold text-sm hover:text-neon-cyan transition-colors"
       >
-        ${initialRate}/hr
+        ₱{initialRate}/hr
         <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
     )
@@ -116,7 +116,7 @@ function RateEditor({ courtId, initialRate, onSaved }: RateEditorProps) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-slate-400 text-sm">$</span>
+      <span className="text-slate-400 text-sm">₱</span>
       <input
         ref={inputRef}
         type="number"
@@ -290,7 +290,7 @@ function AddCourtModal({ onClose, onAdded }: AddCourtModalProps) {
 
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-widest">
-                Rate / hr ($)
+                Rate / hr (₱)
               </label>
               <input
                 type="number"
@@ -444,7 +444,7 @@ function CourtRow({ court, bookingsThisWeek, revenueThisWeek, onUpdate }: CourtR
       {/* Revenue this week */}
       <div className="w-24 text-right">
         <p className="text-sm font-mono font-semibold text-neon-cyan">
-          ${revenueThisWeek.toFixed(0)}
+          ₱{revenueThisWeek.toFixed(0)}
         </p>
         <p className="text-xs text-slate-500">this wk</p>
       </div>

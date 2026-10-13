@@ -20,8 +20,8 @@ function formatShortDate(dateStr: string): string {
 }
 
 function formatCurrencyCompact(n: number): string {
-  if (n >= 1000) return `$${(n / 1000).toFixed(1)}k`
-  return `$${n.toFixed(0)}`
+  if (n >= 1000) return `₱${(n / 1000).toFixed(1)}k`
+  return `₱${n.toFixed(0)}`
 }
 
 export default function MetricsChart({ data, width = 600, height = 180 }: MetricsChartProps) {

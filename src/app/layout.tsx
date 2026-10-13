@@ -31,6 +31,9 @@ export const metadata: Metadata = {
     description: 'Reserve your pickleball court online in seconds.',
     type: 'website',
   },
+  icons: {
+    icon: '/icon.svg',
+  },
 }
 
 export const viewport: Viewport = {
