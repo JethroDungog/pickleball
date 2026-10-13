@@ -49,6 +49,8 @@ export default function CourtSelectorCards({
           return (
             <motion.button
               key={court.id}
+              data-court-id={court.id}
+              data-testid={`court-card-${court.name.toLowerCase().replace(/\s+/g, '-')}`}
               type="button"
               onClick={() => onSelectCourt(court.id)}
               whileHover={{ scale: 1.01 }}

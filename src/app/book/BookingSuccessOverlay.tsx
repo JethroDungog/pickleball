@@ -97,15 +97,14 @@ export default function BookingSuccessOverlay({
   const duration = booking.end_hour - booking.start_hour
 
   return (
-    <AnimatePresence>
-      {/* Backdrop */}
-      <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
-      >
+    <motion.div
+      key="booking-success-overlay"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
+    >
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -202,6 +201,5 @@ export default function BookingSuccessOverlay({
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
   )
 }

@@ -172,10 +172,6 @@ export async function createBooking(
       }
     }
 
-    revalidatePath('/book')
-    revalidatePath('/dashboard')
-    revalidatePath('/schedule')
-
     return { success: true, booking: booking as Booking }
   } catch (err: any) {
     console.error('[createBooking] caught error:', err)
