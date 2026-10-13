@@ -260,19 +260,49 @@ function BookContent() {
 
   // ── Booking submission ─────────────────────────────────────────────────────
   const handleConfirmBooking = useCallback(async () => {
-    if (!draft) return
+    if (!draft || isBooking) return
     setIsBooking(true)
+
+    const currentDraft = draft
+    const currentCourt = selectedCourt
+    const optimisticId = `optimistic-${Date.now()}`
+    const optimisticBooking: Booking = {
+      id: optimisticId,
+      court_id: currentDraft.courtId,
+      user_id: 'pending-optimistic-user',
+      booking_date: currentDraft.date,
+      start_hour: currentDraft.startHour,
+      end_hour: currentDraft.endHour,
+      total_price: currentDraft.totalPrice,
+      status: 'confirmed',
+      notes: notes.trim() || undefined,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      court: currentCourt ?? undefined,
+    }
+
+    // 0ms True Optimistic State Update:
+    // Instantly mark the slots as 'Booked' in local state with ZERO milliseconds delay,
+    // so the time slot buttons and timeline instantly lock into booked state before network roundtrip!
+    setBookings((prev) => [...prev, optimisticBooking])
+
+    // Immediately clear selection draft so dock dismisses cleanly and buttons lock
+    setSelectedStartHour(null)
+    setSelectedEndHour(null)
 
     try {
       const result = await createBooking({
-        court_id: draft.courtId,
-        booking_date: draft.date,
-        start_hour: draft.startHour,
-        end_hour: draft.endHour,
+        court_id: currentDraft.courtId,
+        booking_date: currentDraft.date,
+        start_hour: currentDraft.startHour,
+        end_hour: currentDraft.endHour,
         notes: notes.trim() || undefined,
       })
 
       if (!result.success) {
+        // Rollback optimistic update if server rejected (e.g. concurrent reservation or auth error)
+        setBookings((prev) => prev.filter((b) => b.id !== optimisticId))
+
         if (result.error === 'Authentication required') {
           toast.error('Please sign in to complete your reservation')
           router.push(`/auth/login?redirectTo=${encodeURIComponent('/book')}`)
@@ -282,38 +312,33 @@ function BookContent() {
         return
       }
 
-      // 0ms Optimistic State Update:
-      // Instantly mark the slot as booked in local state so the UI marks the slot
-      // as 'Booked' in 0 milliseconds with zero delay across all views!
+      // Reconcile optimistic placeholder with authoritative server booking
       if (result.booking) {
-        setBookings((prev) => {
-          const exists = prev.some((b) => b.id === result.booking!.id)
-          if (exists) return prev.map((b) => (b.id === result.booking!.id ? result.booking! : b))
-          return [...prev, result.booking!]
-        })
+        setBookings((prev) =>
+          prev.map((b) => (b.id === optimisticId ? result.booking! : b))
+        )
       }
 
       // Show success overlay safely
-      if (result.booking && selectedCourt) {
-        setBookingSuccess({ booking: result.booking, court: selectedCourt })
+      if (result.booking && currentCourt) {
+        setBookingSuccess({ booking: result.booking, court: currentCourt })
       } else {
         toast.success('Court reserved successfully!')
       }
 
-      // Reset slot draft & notes
-      setSelectedStartHour(null)
-      setSelectedEndHour(null)
       setNotes('')
 
       // Background re-fetch to ensure complete sync
       fetchBookings()
     } catch (err) {
+      // Rollback on unexpected network exception
+      setBookings((prev) => prev.filter((b) => b.id !== optimisticId))
       console.error('[BookPage] handleConfirmBooking:', err)
       toast.error('Something went wrong. Please try again.')
     } finally {
       setIsBooking(false)
     }
-  }, [draft, notes, selectedCourt, router, fetchBookings])
+  }, [draft, isBooking, notes, selectedCourt, router, fetchBookings])
 
   // ── Success overlay close ──────────────────────────────────────────────────
   const handleCloseSuccess = useCallback(() => {
