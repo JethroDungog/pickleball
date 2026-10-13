@@ -61,7 +61,8 @@ export default function TimeSlotPicker({
         (b) =>
           b.court_id === court.id &&
           b.booking_date === selectedDate &&
-          b.status === 'confirmed' &&
+          b.status !== 'cancelled' &&
+          b.status !== 'maintenance' &&
           hour >= b.start_hour &&
           hour < b.end_hour,
       )
@@ -132,12 +133,19 @@ export default function TimeSlotPicker({
       return
     }
 
-    // If a range is already selected and user clicks adjacent hour, expand
+    // If a range is already selected and user clicks a later hour within 4 hours, expand the range
     if (selectedStartHour !== null && selectedEndHour !== null) {
-      if (clickedHour === selectedEndHour && selectedEndHour - selectedStartHour < 4) {
-        // Extend by 1 hour forward
-        if (slot.isAvailable) {
-          onSelectRange(selectedStartHour, selectedEndHour + 1)
+      if (clickedHour > selectedStartHour && clickedHour - selectedStartHour < 4) {
+        let allValid = true
+        for (let h = selectedStartHour; h <= clickedHour; h++) {
+          const targetSlot = allSlots.find((s) => s.hour === h)
+          if (!targetSlot || !targetSlot.isAvailable) {
+            allValid = false
+            break
+          }
+        }
+        if (allValid) {
+          onSelectRange(selectedStartHour, clickedHour + 1)
           return
         }
       }
@@ -166,16 +174,16 @@ export default function TimeSlotPicker({
   return (
     <div className="w-full space-y-4">
       {/* Header controls: Court Title + Duration + Period Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--apple-border)] pb-3">
         <div className="flex items-center gap-2">
           <div
             className="w-3 h-3 rounded-full shrink-0"
             style={{ backgroundColor: court.color_hex }}
           />
-          <span className="font-bold text-white text-base">
+          <span className="font-bold text-[var(--apple-text)] text-base">
             {court.name} — 24-Hour Time Slots
           </span>
-          <span className="text-xs text-white/40 font-mono hidden sm:inline">
+          <span className="text-xs text-[var(--apple-subtext)] font-mono hidden sm:inline">
             (24/7 Schedule)
           </span>
         </div>
@@ -321,7 +329,7 @@ export default function TimeSlotPicker({
       </div>
 
       {/* Helper Legend */}
-      <div className="flex items-center justify-between pt-2 text-[11px] text-white/40 flex-wrap gap-2">
+      <div className="flex items-center justify-between pt-2 text-[11px] text-[var(--apple-subtext)] flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#30d158]" />
@@ -336,8 +344,8 @@ export default function TimeSlotPicker({
             <span>Maintenance</span>
           </span>
         </div>
-        <span className="text-white/30">
-          Tap slot to select · Tap adjacent slot to extend
+        <span className="text-[var(--apple-muted)]">
+          Tap slot to select · Tap later slot to extend
         </span>
       </div>
     </div>

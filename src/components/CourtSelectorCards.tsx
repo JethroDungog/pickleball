@@ -67,7 +67,12 @@ export default function CourtSelectorCards({
                     className="w-2.5 h-2.5 rounded-full shrink-0"
                     style={{ backgroundColor: court.color_hex }}
                   />
-                  <span className="font-semibold text-sm tracking-tight text-white">
+                  <span
+                    className={cn(
+                      'font-semibold text-sm tracking-tight',
+                      isSelected ? 'text-white' : 'text-[var(--apple-text)]',
+                    )}
+                  >
                     {court.name}
                   </span>
                 </div>
@@ -81,7 +86,12 @@ export default function CourtSelectorCards({
 
               {/* Surface & Location Specs */}
               <div className="mt-2 space-y-1">
-                <div className="flex items-center gap-1.5 text-[11px] text-white/50">
+                <div
+                  className={cn(
+                    'flex items-center gap-1.5 text-[11px]',
+                    isSelected ? 'text-white/60' : 'text-[var(--apple-subtext)]',
+                  )}
+                >
                   {court.is_indoor ? (
                     <Umbrella size={12} className="text-amber-300 shrink-0" />
                   ) : (

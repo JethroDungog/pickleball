@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, addDays, parseISO, isToday } from 'date-fns'
 import { Map, AlignLeft, ChevronLeft, Loader2, AlertCircle } from 'lucide-react'
@@ -74,13 +74,43 @@ const FALLBACK_COURTS: Court[] = [
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function BookPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen pt-24 bg-[var(--apple-bg)] text-[var(--apple-text)] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-7 h-7 animate-spin text-[var(--apple-subtext)]" />
+            <p className="text-xs text-[var(--apple-subtext)] font-medium">Loading court reservations…</p>
+          </div>
+        </main>
+      }
+    >
+      <BookContent />
+    </Suspense>
+  )
+}
+
+function BookContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const queryCourt = searchParams.get('court')
+  const queryHour = searchParams.get('hour')
+  const queryDate = searchParams.get('date')
 
   // ── State ──────────────────────────────────────────────────────────────────
-  const [selectedCourtId, setSelectedCourtId] = useState<string | null>(FALLBACK_COURTS[0].id)
-  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
-  const [selectedStartHour, setSelectedStartHour] = useState<number | null>(null)
-  const [selectedEndHour, setSelectedEndHour] = useState<number | null>(null)
+  const [selectedCourtId, setSelectedCourtId] = useState<string | null>(queryCourt || FALLBACK_COURTS[0].id)
+  const [selectedDate, setSelectedDate] = useState<string>(queryDate || format(new Date(), 'yyyy-MM-dd'))
+  const [selectedStartHour, setSelectedStartHour] = useState<number | null>(() => {
+    if (!queryHour) return null
+    const h = parseInt(queryHour, 10)
+    return isNaN(h) || h < 0 || h >= 24 ? null : h
+  })
+  const [selectedEndHour, setSelectedEndHour] = useState<number | null>(() => {
+    if (!queryHour) return null
+    const h = parseInt(queryHour, 10)
+    return isNaN(h) || h < 0 || h >= 24 ? null : Math.min(24, h + 1)
+  })
   const [viewMode, setViewMode] = useState<'map' | 'timeline'>('map')
   const [courts, setCourts] = useState<Court[]>(FALLBACK_COURTS)
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -101,6 +131,19 @@ export default function BookPage() {
     addDays(new Date(), i),
   )
 
+  // Sync if URL search params change
+  useEffect(() => {
+    if (queryCourt) setSelectedCourtId(queryCourt)
+    if (queryDate) setSelectedDate(queryDate)
+    if (queryHour) {
+      const h = parseInt(queryHour, 10)
+      if (!isNaN(h) && h >= 0 && h < 24) {
+        setSelectedStartHour(h)
+        setSelectedEndHour(Math.min(24, h + 1))
+      }
+    }
+  }, [queryCourt, queryDate, queryHour])
+
   // ── Fetch courts on mount ──────────────────────────────────────────────────
   useEffect(() => {
     async function fetchCourts() {
@@ -113,49 +156,66 @@ export default function BookPage() {
 
         if (!error && data && data.length > 0) {
           setCourts(data as Court[])
-          setSelectedCourtId((prev) => (prev && data.some((c) => c.id === prev) ? prev : data[0].id))
+          setSelectedCourtId((prev) => {
+            if (queryCourt && data.some((c) => c.id === queryCourt)) return queryCourt
+            return prev && data.some((c) => c.id === prev) ? prev : data[0].id
+          })
         }
       } catch (err) {
         // Fallback courts remain active
       }
     }
     fetchCourts()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [supabase, queryCourt])
 
   // ── Fetch bookings when date changes (synced across all accounts) ────────
-  useEffect(() => {
-    let isCancelled = false
-
-    async function fetchBookings() {
-      setLoadingBookings(true)
-      try {
-        const res = await fetch(`/api/bookings?date=${encodeURIComponent(selectedDate)}`, {
-          cache: 'no-store',
-        })
-        if (res.ok) {
-          const json = await res.json()
-          if (!isCancelled && json.bookings) {
-            setBookings(json.bookings as Booking[])
-          }
+  const fetchBookings = useCallback(async () => {
+    setLoadingBookings(true)
+    try {
+      const res = await fetch(`/api/bookings?date=${encodeURIComponent(selectedDate)}`, {
+        cache: 'no-store',
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.bookings) {
+          setBookings(json.bookings as Booking[])
         }
-      } catch (err) {
-        console.error('[BookPage] fetchBookings error:', err)
-      } finally {
-        if (!isCancelled) setLoadingBookings(false)
       }
-    }
-
-    fetchBookings()
-
-    // Real-time synchronization polling every 8s across all devices & accounts
-    const interval = setInterval(fetchBookings, 8000)
-
-    return () => {
-      isCancelled = true
-      clearInterval(interval)
+    } catch (err) {
+      console.error('[BookPage] fetchBookings error:', err)
+    } finally {
+      setLoadingBookings(false)
     }
   }, [selectedDate])
+
+  // Polling fallback every 2.5s across all devices & accounts
+  useEffect(() => {
+    fetchBookings()
+    const interval = setInterval(fetchBookings, 2500)
+    return () => clearInterval(interval)
+  }, [fetchBookings])
+
+  // Real-time Supabase WebSocket event sync
+  useEffect(() => {
+    const channel = supabase
+      .channel(`realtime-bookings-${selectedDate}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+        },
+        () => {
+          fetchBookings()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedDate, supabase, fetchBookings])
 
   // ── Select time range handler ──────────────────────────────────────────────
   const handleSelectRange = useCallback((startHour: number, endHour: number) => {
@@ -222,16 +282,16 @@ export default function BookPage() {
         return
       }
 
-      // Re-fetch bookings across all accounts immediately
-      try {
-        const res = await fetch(`/api/bookings?date=${encodeURIComponent(selectedDate)}`, {
-          cache: 'no-store',
+      // 0ms Optimistic State Update:
+      // Instantly mark the slot as booked in local state so the UI marks the slot
+      // as 'Booked' in 0 milliseconds with zero delay across all views!
+      if (result.booking) {
+        setBookings((prev) => {
+          const exists = prev.some((b) => b.id === result.booking!.id)
+          if (exists) return prev.map((b) => (b.id === result.booking!.id ? result.booking! : b))
+          return [...prev, result.booking!]
         })
-        if (res.ok) {
-          const json = await res.json()
-          if (json.bookings) setBookings(json.bookings as Booking[])
-        }
-      } catch {}
+      }
 
       // Show success overlay safely
       if (result.booking && selectedCourt) {
@@ -240,22 +300,27 @@ export default function BookPage() {
         toast.success('Court reserved successfully!')
       }
 
-      // Reset selection
+      // Reset slot draft & notes
       setSelectedStartHour(null)
       setSelectedEndHour(null)
       setNotes('')
+
+      // Background re-fetch to ensure complete sync
+      fetchBookings()
     } catch (err) {
       console.error('[BookPage] handleConfirmBooking:', err)
       toast.error('Something went wrong. Please try again.')
     } finally {
       setIsBooking(false)
     }
-  }, [draft, notes, selectedDate, selectedCourt, supabase, router])
+  }, [draft, notes, selectedCourt, router, fetchBookings])
 
   // ── Success overlay close ──────────────────────────────────────────────────
   const handleCloseSuccess = useCallback(() => {
     setBookingSuccess(null)
-    setSelectedCourtId(FALLBACK_COURTS[0].id)
+    // CRITICAL FIX: DO NOT reset selectedCourtId to Court 1!
+    // Keeping selectedCourtId on the booked court ensures the user stays on Court 3/4
+    // and sees their reserved slots as 'Booked' instead of flipping to Court 1.
     setSelectedStartHour(null)
     setSelectedEndHour(null)
   }, [])

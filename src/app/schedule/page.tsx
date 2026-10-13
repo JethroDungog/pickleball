@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { format, addDays } from 'date-fns'
 import { ChevronRight, Calendar, Clock, MapPin, Zap, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -58,6 +59,7 @@ const FALLBACK_COURTS: Court[] = [
 ]
 
 export default function SchedulePage() {
+  const router = useRouter()
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'))
   const [courts, setCourts] = useState<Court[]>(FALLBACK_COURTS)
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -65,41 +67,56 @@ export default function SchedulePage() {
   const supabase = createClient()
   const dates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i))
 
-  useEffect(() => {
-    let isCancelled = false
+  const loadData = useCallback(async () => {
+    try {
+      const [courtsRes, bookingsRes] = await Promise.all([
+        supabase.from('courts').select('*').eq('is_active', true).order('name'),
+        fetch(`/api/bookings?date=${encodeURIComponent(selectedDate)}`, { cache: 'no-store' }),
+      ])
 
-    async function loadData() {
-      try {
-        const [courtsRes, bookingsRes] = await Promise.all([
-          supabase.from('courts').select('*').eq('is_active', true).order('name'),
-          fetch(`/api/bookings?date=${encodeURIComponent(selectedDate)}`, { cache: 'no-store' }),
-        ])
-
-        if (!isCancelled && courtsRes.data && courtsRes.data.length > 0) {
-          setCourts(courtsRes.data as Court[])
-        }
-
-        if (!isCancelled && bookingsRes.ok) {
-          const json = await bookingsRes.json()
-          if (json.bookings) {
-            setBookings(json.bookings as Booking[])
-          }
-        }
-      } catch {
-        // Fallback courts remain active
+      if (courtsRes.data && courtsRes.data.length > 0) {
+        setCourts(courtsRes.data as Court[])
       }
-    }
 
-    loadData()
-
-    // Real-time synchronization polling every 8s across all devices & accounts
-    const interval = setInterval(loadData, 8000)
-
-    return () => {
-      isCancelled = true
-      clearInterval(interval)
+      if (bookingsRes.ok) {
+        const json = await bookingsRes.json()
+        if (json.bookings) {
+          setBookings(json.bookings as Booking[])
+        }
+      }
+    } catch {
+      // Fallback courts remain active
     }
   }, [selectedDate, supabase])
+
+  // Initial load and fast 2.5s fallback polling
+  useEffect(() => {
+    loadData()
+    const interval = setInterval(loadData, 2500)
+    return () => clearInterval(interval)
+  }, [loadData])
+
+  // Real-time Supabase WebSocket event sync
+  useEffect(() => {
+    const channel = supabase
+      .channel(`schedule-realtime-${selectedDate}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+        },
+        () => {
+          loadData()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedDate, supabase, loadData])
 
   return (
     <main className="min-h-screen bg-[var(--apple-bg)] text-[var(--apple-text)] pt-24 pb-16 font-body antialiased transition-colors">
@@ -193,6 +210,9 @@ export default function SchedulePage() {
             courts={courts}
             bookings={bookings}
             selectedDate={selectedDate}
+            onSlotClick={(courtId, hour) => {
+              router.push(`/book?court=${encodeURIComponent(courtId)}&hour=${hour}&date=${encodeURIComponent(selectedDate)}`)
+            }}
           />
         </div>
 
