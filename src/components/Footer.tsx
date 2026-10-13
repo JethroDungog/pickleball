@@ -80,14 +80,14 @@ export default function Footer() {
             </p>
             <div className="flex flex-col gap-2 pt-1">
               <Link
-                href="/admin?preview=admin"
+                href="/admin"
                 className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-[var(--apple-border)] text-xs font-medium text-[var(--apple-text)] hover:bg-black/[0.06] dark:hover:bg-white/10 transition-all group"
               >
                 <span>Court Manager Portal</span>
                 <ArrowUpRight size={13} className="text-[var(--apple-muted)] group-hover:text-[var(--apple-text)] transition-colors" />
               </Link>
               <Link
-                href="/super-admin?preview=super_admin"
+                href="/super-admin"
                 className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-[var(--apple-border)] text-xs font-medium text-[var(--apple-text)] hover:bg-black/[0.06] dark:hover:bg-white/10 transition-all group"
               >
                 <span>Super Admin Console</span>

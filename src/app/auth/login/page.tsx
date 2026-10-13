@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createBrowserClient } from '@supabase/ssr'
-import { Mail, Lock, User, Phone, ArrowRight, Loader2, CheckCircle2, X, HelpCircle, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
+import { Mail, Lock, User, Phone, ArrowRight, Loader2, CheckCircle2, X, HelpCircle, ChevronDown, ChevronUp, ExternalLink, Shield } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 
@@ -43,8 +43,7 @@ function LoginForm() {
           toast.error(error.message)
         } else if (data.session) {
           toast.success('Welcome back!')
-          router.push(redirectTo)
-          router.refresh()
+          window.location.href = redirectTo
         }
       } else {
         if (!fullName.trim()) {
@@ -68,8 +67,7 @@ function LoginForm() {
           toast.error(error.message)
         } else if (data.session) {
           toast.success('Account created!')
-          router.push(redirectTo)
-          router.refresh()
+          window.location.href = redirectTo
         } else if (data.user) {
           setSignUpSuccess(true)
           toast.success('Account created! Please check your email to confirm.')
@@ -183,6 +181,19 @@ function LoginForm() {
       {/* Right Column: Form */}
       <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-20 relative">
         <div className="w-full max-w-md mx-auto">
+          {/* Staff Clearance Notice */}
+          {redirectTo.includes('admin') && (
+            <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3 text-xs text-amber-600 dark:text-amber-400">
+              <Shield className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold uppercase tracking-wider text-[10px]">Staff Clearance Required</p>
+                <p className="mt-0.5 text-xs text-amber-700/80 dark:text-amber-300/80 leading-relaxed">
+                  You are accessing the {redirectTo.includes('super-admin') ? 'Super Admin Console' : 'Court Manager Portal'}. Please authenticate with an authorized staff account.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="mb-6">
             <h1 className="font-display font-bold text-2xl sm:text-3xl text-[var(--apple-text)] tracking-tight">
@@ -408,45 +419,66 @@ function LoginForm() {
             </form>
           )}
 
-          {/* Quick Role Preview Box */}
+          {/* Real Staff & Test Accounts 1-Click Fill */}
           <div className="mt-8 pt-6 border-t border-[var(--apple-border)]">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-semibold tracking-wider text-[var(--apple-subtext)] uppercase">
-                Explore Portal Roles (Preview Mode)
+                Staff & Test Credentials
               </span>
-              <span className="text-[10px] text-[#34c759] font-medium">1-Click Test</span>
+              <span className="text-[10px] text-[#34c759] font-medium">1-Click Fill</span>
             </div>
             <div className="grid grid-cols-3 gap-2.5">
-              <Link
-                href="/admin?preview=admin"
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm"
-              >
-                <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#34c759] transition-colors">
-                  Admin
-                </span>
-                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Court Manager</span>
-              </Link>
-              <Link
-                href="/super-admin?preview=super_admin"
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm"
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signin')
+                  setEmail('superadmin@pickcourt.com')
+                  setPassword('Password123!')
+                  setErrorMsg(null)
+                  toast.success('Loaded Super Admin credentials')
+                }}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm cursor-pointer"
               >
                 <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#0071e3] transition-colors">
                   Super Admin
                 </span>
-                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Facility Metrics</span>
-              </Link>
-              <Link
-                href="/dashboard?preview=customer"
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm"
+                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Facility Director</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signin')
+                  setEmail('admin@pickcourt.com')
+                  setPassword('Password123!')
+                  setErrorMsg(null)
+                  toast.success('Loaded Court Manager credentials')
+                }}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm cursor-pointer"
+              >
+                <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#34c759] transition-colors">
+                  Admin
+                </span>
+                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Court Marshal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signin')
+                  setEmail('player@pickcourt.com')
+                  setPassword('Password123!')
+                  setErrorMsg(null)
+                  toast.success('Loaded Customer Player credentials')
+                }}
+                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm cursor-pointer"
               >
                 <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#ff9f0a] transition-colors">
                   Customer
                 </span>
-                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Pass Wallet</span>
-              </Link>
+                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Player Pass</span>
+              </button>
             </div>
             <p className="mt-3 text-[11px] text-[var(--apple-subtext)] leading-relaxed text-center">
-              Testing the application? Click any role above to inspect its interface instantly without needing a Supabase account.
+              Tap any role above to load its real Supabase account credentials with password <code className="font-mono text-[var(--apple-text)] font-semibold">Password123!</code>.
             </p>
           </div>
         </div>

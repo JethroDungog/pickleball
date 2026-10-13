@@ -231,7 +231,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       .single<Pick<Profile, 'role'>>()
 
     if (!profile || !['admin', 'super_admin'].includes(profile.role)) {
-      redirect('/dashboard')
+      redirect('/unauthorized')
     }
   }
 
