@@ -122,8 +122,17 @@ export async function createBooking(
       )
     }
 
-    // 5. Check for overlapping bookings on this court and date
-    const { data: existingBookings } = await supabase
+    // 5. Check for overlapping bookings on this court and date across ALL users
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
+    const serviceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      ''
+    const adminSupabase = createSupabaseClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    const { data: existingBookings } = await adminSupabase
       .from('bookings')
       .select('id, start_hour, end_hour')
       .eq('court_id', courtId)
@@ -300,7 +309,9 @@ export async function getCourtBookings(courtId: string, date: string): Promise<B
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
     const serviceKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      ''
     const supabase = createSupabaseClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
@@ -335,7 +346,9 @@ export async function getFacilityBookings(date: string): Promise<Booking[]> {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
     const serviceKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      ''
     const supabase = createSupabaseClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
