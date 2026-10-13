@@ -419,68 +419,7 @@ function LoginForm() {
             </form>
           )}
 
-          {/* Real Staff & Test Accounts 1-Click Fill */}
-          <div className="mt-8 pt-6 border-t border-[var(--apple-border)]">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-semibold tracking-wider text-[var(--apple-subtext)] uppercase">
-                Staff & Test Credentials
-              </span>
-              <span className="text-[10px] text-[#34c759] font-medium">1-Click Fill</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signin')
-                  setEmail('superadmin@pickcourt.com')
-                  setPassword('Password123!')
-                  setErrorMsg(null)
-                  toast.success('Loaded Super Admin credentials')
-                }}
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm cursor-pointer"
-              >
-                <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#0071e3] transition-colors">
-                  Super Admin
-                </span>
-                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Facility Director</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signin')
-                  setEmail('admin@pickcourt.com')
-                  setPassword('Password123!')
-                  setErrorMsg(null)
-                  toast.success('Loaded Court Manager credentials')
-                }}
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm cursor-pointer"
-              >
-                <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#34c759] transition-colors">
-                  Admin
-                </span>
-                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Court Marshal</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('signin')
-                  setEmail('player@pickcourt.com')
-                  setPassword('Password123!')
-                  setErrorMsg(null)
-                  toast.success('Loaded Customer Player credentials')
-                }}
-                className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[var(--apple-card)] border border-[var(--apple-border)] hover:border-black/20 dark:hover:border-white/20 transition-all group text-center shadow-sm cursor-pointer"
-              >
-                <span className="text-xs font-semibold text-[var(--apple-text)] group-hover:text-[#ff9f0a] transition-colors">
-                  Customer
-                </span>
-                <span className="text-[10px] text-[var(--apple-subtext)] mt-0.5">Player Pass</span>
-              </button>
-            </div>
-            <p className="mt-3 text-[11px] text-[var(--apple-subtext)] leading-relaxed text-center">
-              Tap any role above to load its real Supabase account credentials with password <code className="font-mono text-[var(--apple-text)] font-semibold">Password123!</code>.
-            </p>
-          </div>
+
         </div>
       </div>
 
