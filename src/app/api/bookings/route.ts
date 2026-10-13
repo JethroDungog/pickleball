@@ -1,7 +1,22 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createGuestBooking } from '@/actions/bookings'
 
 export const dynamic = 'force-dynamic'
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const result = await createGuestBooking(body)
+    if (!result.success) {
+      return NextResponse.json({ error: result.error || 'Failed to create booking' }, { status: 400 })
+    }
+    return NextResponse.json(result)
+  } catch (err: any) {
+    console.error('[/api/bookings] POST error:', err)
+    return NextResponse.json({ error: err?.message || 'Internal server error' }, { status: 500 })
+  }
+}
 
 export async function GET(request: Request) {
   try {

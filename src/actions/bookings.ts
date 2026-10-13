@@ -487,3 +487,254 @@ export async function updateBookingStatus(
 
   return { success: true, booking: updated as Booking }
 }
+
+// ── createGuestBooking ────────────────────────────────────────────────────────
+
+export interface CreateGuestBookingInput {
+  court_id: string
+  booking_date: string
+  start_hour: number
+  end_hour: number
+  guest_name: string
+  guest_phone: string
+  guest_email: string
+  payment_method?: 'qr_code' | 'paymongo'
+  payment_reference?: string
+  receipt_screenshot?: string
+  sender_name?: string
+  addons?: {
+    ball_machine?: number
+    paddles?: number
+  }
+  notes?: string
+}
+
+/**
+ * Creates a court booking for a guest without requiring prior authentication.
+ * Silently provisions or links their Supabase profile and commits the booking.
+ */
+export async function createGuestBooking(
+  data: CreateGuestBookingInput,
+): Promise<BookingActionResult> {
+  try {
+    // 1. Basic validation
+    if (!data.court_id || !data.booking_date) {
+      return { success: false, error: 'Court and date are required' }
+    }
+    if (data.end_hour <= data.start_hour) {
+      return { success: false, error: 'End time must be after start time' }
+    }
+    if (data.end_hour - data.start_hour > 4) {
+      return { success: false, error: 'Maximum booking duration is 4 hours' }
+    }
+    if (!data.guest_name?.trim() || !data.guest_email?.trim() || !data.guest_phone?.trim()) {
+      return { success: false, error: 'Please provide full name, email, and phone number' }
+    }
+
+    // 2. Setup Supabase admin client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || ''
+    const serviceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      ''
+    const adminSupabase = createSupabaseClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    // 3. Resolve court
+    let courtId = data.court_id
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courtId)
+    let court: { id: string; hourly_rate: number; is_active: boolean; name: string } | null = null
+
+    if (isUUID) {
+      const { data: courtData } = await adminSupabase
+        .from('courts')
+        .select('id, hourly_rate, is_active, name')
+        .eq('id', courtId)
+        .maybeSingle()
+      court = courtData
+    }
+
+    if (!court) {
+      const { data: allCourts } = await adminSupabase
+        .from('courts')
+        .select('id, name, hourly_rate, is_active')
+        .eq('is_active', true)
+        .order('name')
+
+      if (allCourts && allCourts.length > 0) {
+        const match = allCourts.find(
+          (c) =>
+            courtId.toLowerCase().includes(c.name.toLowerCase().replace(/\s+/g, '')) ||
+            courtId.toLowerCase().includes(c.name.toLowerCase()),
+        )
+        court = match || allCourts[0]
+        courtId = court.id
+      }
+    }
+
+    if (!court) {
+      return { success: false, error: 'Court not found. Please refresh and try again.' }
+    }
+    if (!court.is_active) {
+      return { success: false, error: 'This court is currently unavailable for booking.' }
+    }
+
+    // 4. Overlap check across ALL users
+    const { data: existingBookings } = await adminSupabase
+      .from('bookings')
+      .select('id, start_hour, end_hour')
+      .eq('court_id', courtId)
+      .eq('booking_date', data.booking_date)
+      .neq('status', 'cancelled')
+
+    if (existingBookings && existingBookings.length > 0) {
+      const hasOverlap = existingBookings.some((b) => {
+        return data.start_hour < b.end_hour && data.end_hour > b.start_hour
+      })
+      if (hasOverlap) {
+        return {
+          success: false,
+          error: 'This time slot is already reserved. Please select another time.',
+        }
+      }
+    }
+
+    // 5. Authenticated user or guest user linking
+    let userId: string | null = null
+
+    try {
+      const serverSupabase = await createClient()
+      const { data: authData } = await serverSupabase.auth.getUser()
+      if (authData.user) {
+        userId = authData.user.id
+      }
+    } catch {
+      // Guest booking
+    }
+
+    const cleanEmail = data.guest_email.toLowerCase().trim()
+    const cleanName = data.guest_name.trim()
+    const cleanPhone = data.guest_phone.trim()
+
+    if (!userId) {
+      // Check existing profile by email
+      const { data: existingProf } = await adminSupabase
+        .from('profiles')
+        .select('id')
+        .eq('email', cleanEmail)
+        .maybeSingle()
+
+      if (existingProf) {
+        userId = existingProf.id
+        await adminSupabase
+          .from('profiles')
+          .update({ phone: cleanPhone, full_name: cleanName })
+          .eq('id', userId)
+      } else {
+        // Try creating new user in auth.users
+        const tempPassword = `Guest_${Math.random().toString(36).substring(2, 10)}_Pass!`
+        const { data: newAuthUser, error: authCreateError } = await adminSupabase.auth.admin.createUser({
+          email: cleanEmail,
+          email_confirm: true,
+          user_metadata: {
+            full_name: cleanName,
+            phone: cleanPhone,
+          },
+          password: tempPassword,
+        })
+
+        if (newAuthUser?.user?.id) {
+          userId = newAuthUser.user.id
+          await adminSupabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              email: cleanEmail,
+              full_name: cleanName,
+              phone: cleanPhone,
+              role: 'customer',
+            }, { onConflict: 'id' })
+        } else {
+          // If auth creation had conflict, search users
+          const { data: userList } = await adminSupabase.auth.admin.listUsers()
+          const matched = userList?.users?.find((u) => u.email?.toLowerCase() === cleanEmail)
+          if (matched) {
+            userId = matched.id
+            await adminSupabase
+              .from('profiles')
+              .upsert({
+                id: userId,
+                email: cleanEmail,
+                full_name: cleanName,
+                phone: cleanPhone,
+                role: 'customer',
+              }, { onConflict: 'id' })
+          } else {
+            console.error('[createGuestBooking] Failed to provision guest account:', authCreateError)
+            return { success: false, error: 'Could not initialize guest account. Please try again.' }
+          }
+        }
+      }
+    }
+
+    // 6. Calculate total price
+    const durationHours = data.end_hour - data.start_hour
+    const courtPrice = court.hourly_rate * durationHours
+    const ballMachinePrice = (data.addons?.ball_machine || 0) * 200
+    const paddlePrice = (data.addons?.paddles || 0) * 100
+    const total_price = courtPrice + ballMachinePrice + paddlePrice
+
+    // 7. Store full metadata in notes
+    const bookingMetadata = {
+      guest_name: cleanName,
+      guest_phone: cleanPhone,
+      guest_email: cleanEmail,
+      payment_method: data.payment_method || 'qr_code',
+      payment_reference: data.payment_reference || '',
+      receipt_screenshot: data.receipt_screenshot || null,
+      sender_name: data.sender_name || null,
+      addons: {
+        ball_machine_hours: data.addons?.ball_machine || 0,
+        paddle_count: data.addons?.paddles || 0,
+      },
+      user_notes: data.notes || '',
+    }
+
+    // 8. Insert booking using adminSupabase
+    const { data: booking, error: insertError } = await adminSupabase
+      .from('bookings')
+      .insert({
+        court_id: courtId,
+        user_id: userId,
+        booking_date: data.booking_date,
+        start_hour: data.start_hour,
+        end_hour: data.end_hour,
+        total_price,
+        status: 'confirmed' as BookingStatus,
+        notes: JSON.stringify(bookingMetadata),
+      })
+      .select('*, court:courts(*), profile:profiles(*)')
+      .single()
+
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return { success: false, error: 'This time slot is already booked.' }
+      }
+      console.error('[createGuestBooking] insert error:', insertError)
+      return { success: false, error: insertError.message || 'Failed to save booking.' }
+    }
+
+    revalidatePath('/dashboard')
+
+    return {
+      success: true,
+      booking: booking as Booking,
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'An unexpected error occurred'
+    console.error('[createGuestBooking]', err)
+    return { success: false, error: message }
+  }
+}
+

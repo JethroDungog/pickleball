@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, addDays, parseISO, isToday } from 'date-fns'
-import { Map, AlignLeft, ChevronLeft, Loader2, AlertCircle } from 'lucide-react'
+import { Map, AlignLeft, ChevronLeft, Loader2, AlertCircle, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import { createClient } from '@/lib/supabase/client'
@@ -12,6 +12,7 @@ import { createBooking } from '@/actions/bookings'
 import { cn, formatHour, formatCurrency, getSlotStatus } from '@/lib/utils'
 import type { Court, Booking, BookingDraft } from '@/types'
 
+import BookingWizard from '@/components/wizard/BookingWizard'
 import CourtSelectorCards from '@/components/CourtSelectorCards'
 import CourtMapPicker from '@/components/CourtMapPicker'
 import TimeSlotPicker from '@/components/TimeSlotPicker'
@@ -97,6 +98,7 @@ function BookContent() {
   const queryCourt = searchParams.get('court')
   const queryHour = searchParams.get('hour')
   const queryDate = searchParams.get('date')
+  const queryMode = searchParams.get('mode')
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [selectedCourtId, setSelectedCourtId] = useState<string | null>(queryCourt || FALLBACK_COURTS[0].id)
@@ -111,7 +113,9 @@ function BookContent() {
     const h = parseInt(queryHour, 10)
     return isNaN(h) || h < 0 || h >= 24 ? null : Math.min(24, h + 1)
   })
-  const [viewMode, setViewMode] = useState<'map' | 'timeline'>('map')
+  const [viewMode, setViewMode] = useState<'wizard' | 'map' | 'timeline'>(
+    queryMode === 'map' ? 'map' : queryMode === 'timeline' ? 'timeline' : 'wizard'
+  )
   const [courts, setCourts] = useState<Court[]>(FALLBACK_COURTS)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [isBooking, setIsBooking] = useState(false)
@@ -377,7 +381,13 @@ function BookContent() {
           </div>
         </div>
 
-        {/* ── Date Strip (Horizontal scroll on mobile) ── */}
+        {viewMode === 'wizard' ? (
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+            <BookingWizard initialCourts={courts} initialBookings={bookings} />
+          </div>
+        ) : (
+          <>
+            {/* ── Date Strip (Horizontal scroll on mobile) ── */}
         <DateStrip
           dates={dateOptions}
           selectedDate={selectedDate}
@@ -509,6 +519,8 @@ function BookContent() {
             />
           )}
         </AnimatePresence>
+          </>
+        )}
 
         {/* Success Confetti & Ticket Modal */}
         <AnimatePresence>
@@ -580,15 +592,20 @@ function ViewToggle({
   viewMode,
   onChange,
 }: {
-  viewMode: 'map' | 'timeline'
-  onChange: (v: 'map' | 'timeline') => void
+  viewMode: 'wizard' | 'map' | 'timeline'
+  onChange: (v: 'wizard' | 'map' | 'timeline') => void
 }) {
   return (
     <div
       className="flex items-center p-1 rounded-full border border-[var(--apple-border)] bg-black/[0.04] dark:bg-white/[0.04] self-start sm:self-auto"
     >
-      {(['map', 'timeline'] as const).map((mode) => {
+      {(['wizard', 'map', 'timeline'] as const).map((mode) => {
         const isActive = viewMode === mode
+        const labels = {
+          wizard: '4-Step Wizard',
+          map: 'Court Map',
+          timeline: '24h Timeline',
+        }
         return (
           <button
             key={mode}
@@ -601,8 +618,8 @@ function ViewToggle({
                 : 'text-[var(--apple-subtext)] hover:text-[var(--apple-text)]',
             )}
           >
-            {mode === 'map' ? <Map size={12} /> : <AlignLeft size={12} />}
-            <span>{mode === 'map' ? 'Court Map' : '24h Timeline'}</span>
+            {mode === 'wizard' ? <Sparkles size={12} /> : mode === 'map' ? <Map size={12} /> : <AlignLeft size={12} />}
+            <span>{labels[mode]}</span>
           </button>
         )
       })}

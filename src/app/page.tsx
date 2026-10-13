@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import CourtMapPicker from '@/components/CourtMapPicker'
+import BookingWizard from '@/components/wizard/BookingWizard'
 import Footer from '@/components/Footer'
 import type { Court } from '@/types'
 
@@ -127,7 +128,7 @@ function HeroSection() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14"
         >
-          <Link href="/book" className="w-full sm:w-auto">
+          <a href="#booking" className="w-full sm:w-auto">
             <button
               type="button"
               className="btn-primary w-full sm:w-auto text-sm !px-8 !py-3.5"
@@ -135,7 +136,7 @@ function HeroSection() {
               <span>Book a Court</span>
               <ChevronRight size={16} strokeWidth={2.5} />
             </button>
-          </Link>
+          </a>
           <a href="#courts-preview" className="w-full sm:w-auto">
             <button
               type="button"
@@ -502,11 +503,48 @@ function HowItWorksSection() {
   )
 }
 
+// ─── Booking Wizard Section (4-Step Frictionless Guest Booking) ───────────────
+function BookingWizardSection() {
+  const ref = useRef(null)
+  const inView = useInView(ref, { once: true, margin: '-60px' })
+
+  return (
+    <section
+      id="booking"
+      ref={ref}
+      className="relative py-24 bg-[var(--apple-bg)] border-t border-[var(--apple-border)] transition-colors scroll-mt-12"
+    >
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-3">
+            <Sparkles size={12} />
+            <span>Instant Reservation · No Account Required</span>
+          </div>
+          <h2 className="font-display font-bold text-3xl sm:text-5xl text-[var(--apple-text)] tracking-tight">
+            Reserve Your Court in 4 Simple Steps
+          </h2>
+          <p className="text-sm sm:text-base text-[var(--apple-subtext)] mt-2 max-w-xl mx-auto leading-relaxed">
+            Pick your preferred date and time, provide your contact details, and secure your slot with instant QR Ph payment.
+          </p>
+        </motion.div>
+
+        <BookingWizard />
+      </div>
+    </section>
+  )
+}
+
 // ─── Page Root ────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[var(--apple-bg)] text-[var(--apple-text)] font-body antialiased transition-colors">
       <HeroSection />
+      <BookingWizardSection />
       <CourtsSection />
       <BentoSection />
       <HowItWorksSection />
@@ -514,3 +552,4 @@ export default function LandingPage() {
     </main>
   )
 }
+
